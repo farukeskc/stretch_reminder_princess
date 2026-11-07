@@ -1,0 +1,26 @@
+{
+  "name": "prenses-molasi",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Masa başı esneme hatırlatıcısı (iPhone PWA + Web Push)",
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "test": "node --test \"scripts/test/*.test.mjs\"",
+    "send": "node scripts/send-reminders.mjs",
+    "send:dry": "node scripts/send-reminders.mjs --dry-run",
+    "icons": "node scripts/gen-icons.mjs",
+    "check:data": "node scripts/check-data.mjs",
+    "serve": "firebase emulators:start --only hosting",
+    "deploy": "firebase deploy --only hosting,firestore:rules"
+  },
+  "dependencies": {
+    "firebase-admin": "14.5.0",
+    "web-push": "3.6.7"
+  },
+  "devDependencies": {
+    "sharp": "0.35.5"
+  }
+}

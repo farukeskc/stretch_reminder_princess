@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<title>Poz kontrolü</title>
+<link rel="stylesheet" href="../public/css/figure.css">
+<style>
+  body { font: 12px system-ui, sans-serif; margin: 12px; background: #fff7fb; }
+  .row { display: flex; gap: 6px; align-items: flex-end; margin-bottom: 10px; }
+  .row h3 { width: 130px; margin: 0; font-size: 12px; }
+  .snap { width: 210px; background: #fff; border: 1px solid #eee; border-radius: 8px; padding: 4px; }
+  .snap small { display: block; text-align: center; color: #999; }
+  .snap .fig, .snap .fig * { animation-play-state: paused !important; animation-delay: var(--t) !important; }
+</style>
+</head>
+<body>
+<div id="out"></div>
+<script type="module">
+  import { renderFigure, ANIMS } from '../public/js/figure.js';
+  const stretches = await (await fetch('../public/data/stretches.json')).json();
+  const only = new URLSearchParams(location.search).get('only');
+  const out = document.getElementById('out');
+  for (const s of stretches) {
+    if (only && !only.split(',').includes(s.anim)) continue;
+    const def = ANIMS[s.anim];
+    const cycle = def.mirror ? def.dur * 2 : def.dur;
+    const fracs = def.mirror ? [0, 0.2, 0.3, 0.45, 0.7, 0.8] : [0, 0.25, 0.4, 0.55, 0.7, 0.85];
+    const row = document.createElement('div');
+    row.className = 'row';
+    row.innerHTML = `<h3>${s.name}<br><small>${s.anim}</small></h3>` +
+      fracs.map((f) => `<div class="snap" style="--t:${-(f * cycle)}s">${renderFigure(s)}<small>${Math.round(f * 100)}%</small></div>`).join('');
+    out.appendChild(row);
+  }
+  document.body.dataset.ready = '1';
+</script>
+</body>
+</html>

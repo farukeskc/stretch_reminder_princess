@@ -1,0 +1,319 @@
+[
+  {
+    "id": "boyun-yana-egme",
+    "name": "Boyun Yana Eğme",
+    "areas": ["boyun", "omuz"],
+    "view": "front",
+    "anim": "neck-tilt",
+    "durationSec": 45,
+    "summary": "Boynun yanlarındaki ve omuzlarının üstündeki gerginliği alır.",
+    "steps": [
+      { "text": "Dik otur, omuzlarını gevşet ve aşağı bırak.", "sec": 5 },
+      { "text": "Sağ kulağını yavaşça sağ omzuna doğru yaklaştır. Omzunu kaldırma.", "sec": 15 },
+      { "text": "Yavaşça ortaya dön, bir nefes al.", "sec": 5 },
+      { "text": "Şimdi sol kulağını sol omzuna doğru yaklaştır.", "sec": 15 },
+      { "text": "Yavaşça ortaya dön.", "sec": 5 }
+    ],
+    "tips": [
+      "Daha derin hissetmek için esnettiğin taraftaki elinle sandalyenin kenarını tutabilirsin.",
+      "Nefesini tutma, yavaş ve derin nefes al."
+    ],
+    "caution": "Keskin bir ağrı, uyuşma ya da karıncalanma olursa hemen bırak.",
+    "youtube": { "id": "UUXUVFQS5u0", "title": "Cervical Sidebend – Ask Doctor Jo", "channel": "AskDoctorJo" }
+  },
+  {
+    "id": "cene-geri-cekme",
+    "name": "Çene Geri Çekme",
+    "areas": ["boyun", "sirt"],
+    "view": "side",
+    "anim": "chin-tuck",
+    "durationSec": 35,
+    "summary": "Ekrana doğru uzanan 'kaplumbağa boynu' duruşunu düzeltir.",
+    "steps": [
+      { "text": "Dik otur ve tam karşıya bak.", "sec": 5 },
+      { "text": "Başını eğmeden çeneni düz bir çizgide geriye it, sanki çift çene yapıyormuş gibi. 3 saniye tut, sonra bırak. 10 kez tekrarla.", "sec": 30 }
+    ],
+    "tips": [
+      "Bakışın hep karşıda kalsın, başını aşağı eğme.",
+      "Ensende hafif bir uzama hissetmelisin."
+    ],
+    "caution": "Hareket küçük olmalı. Boynunu zorlayacak kadar geriye itme.",
+    "youtube": { "id": "ekJzJTnd43s", "title": "Physical Therapist Explains How To Perform Chin Tucks", "channel": "Office Athlete" }
+  },
+  {
+    "id": "boyun-dondurme",
+    "name": "Boyun Döndürme",
+    "areas": ["boyun"],
+    "view": "front",
+    "anim": "neck-turn",
+    "durationSec": 40,
+    "summary": "Boynunun hareket açıklığını korur, tutulmayı azaltır.",
+    "steps": [
+      { "text": "Dik otur, omuzların sabit ve gevşek kalsın.", "sec": 4 },
+      { "text": "Başını yavaşça sağa çevir, sağ omzunun üzerinden bakmaya çalış.", "sec": 9 },
+      { "text": "Ortadan geçerek başını yavaşça sola çevir.", "sec": 9 },
+      { "text": "Tekrar sağa çevir ve bekle.", "sec": 9 },
+      { "text": "Son kez sola çevir, sonra ortaya dön.", "sec": 9 }
+    ],
+    "tips": ["Çeneni yere paralel tut, başını yukarı ya da aşağı eğme."],
+    "caution": "Baş dönmesi olursa hareketi yavaşlat ya da bırak.",
+    "youtube": { "id": "PruXF-NE2zI", "title": "Cervical Rotation – Ask Doctor Jo", "channel": "AskDoctorJo" }
+  },
+  {
+    "id": "omuz-cevirme",
+    "name": "Omuz Çevirme",
+    "areas": ["omuz", "sirt"],
+    "view": "front",
+    "anim": "shoulder-roll",
+    "durationSec": 45,
+    "summary": "Omuz ve kürek kemikleri çevresindeki kasları ısıtır, kanlandırır.",
+    "steps": [
+      { "text": "Kollarını yanlarında serbest bırak.", "sec": 3 },
+      { "text": "Omuzlarını kulaklarına doğru kaldır, sonra geriye ve aşağıya doğru büyük daireler çiz. 10 kez.", "sec": 20 },
+      { "text": "Şimdi yönü değiştir: öne doğru 10 daire.", "sec": 18 },
+      { "text": "Omuzlarını bırak ve derin bir nefes al.", "sec": 4 }
+    ],
+    "tips": ["Daireleri yavaş ve olabildiğince büyük çiz."],
+    "caution": "Omzunda klik sesiyle birlikte ağrı olursa daireleri küçült.",
+    "youtube": { "id": "VikUs5HH8cc", "title": "NUH Physiotherapy – Shoulder Rolls", "channel": "National University Hospital Singapore" }
+  },
+  {
+    "id": "omuz-silkme",
+    "name": "Omuz Silkip Bırakma",
+    "areas": ["omuz", "boyun"],
+    "view": "front",
+    "anim": "shrug",
+    "durationSec": 32,
+    "summary": "Stresle yukarı kalkan omuzları bilinçli olarak gevşetir.",
+    "steps": [
+      { "text": "Nefes alırken iki omzunu kulaklarına doğru kaldır.", "sec": 3 },
+      { "text": "2 saniye tut.", "sec": 2 },
+      { "text": "Nefes verirken omuzlarını tamamen bırak, aşağı düşsünler.", "sec": 3 },
+      { "text": "Aynı şekilde 7 kez daha tekrarla, her seferinde biraz daha gevşe.", "sec": 24 }
+    ],
+    "tips": ["Bırakırken 'ohh' diye sesli nefes vermek gevşemeyi artırır."],
+    "caution": "Ani ya da sert hareket yapma.",
+    "youtube": { "id": "ja_P3YhmAlE", "title": "Shoulder Shrugs – Ask Doctor Jo", "channel": "AskDoctorJo" }
+  },
+  {
+    "id": "gogus-acma",
+    "name": "Göğüs Açma",
+    "areas": ["sirt", "omuz"],
+    "view": "side",
+    "anim": "chest-open",
+    "durationSec": 50,
+    "summary": "Klavye başında öne kapanan göğsü ve omuzları açar, duruşu düzeltir.",
+    "steps": [
+      { "text": "Sandalyenin ön kısmına doğru otur.", "sec": 3 },
+      { "text": "Ellerini arkanda birleştir. Birleşmiyorsa sandalyenin arkasını tut.", "sec": 4 },
+      { "text": "Kürek kemiklerini birbirine yaklaştır, göğsünü öne aç, hafifçe yukarı bak.", "sec": 18 },
+      { "text": "Yavaşça bırak ve 2 nefes dinlen.", "sec": 7 },
+      { "text": "Bir kez daha: göğsünü aç ve tut.", "sec": 18 }
+    ],
+    "tips": ["Belini aşırı çukurlaştırma, hareket göğüsten gelsin."],
+    "caution": "Omzunun önünde batma hissi olursa kollarını daha az kaldır.",
+    "youtube": { "id": "74pFx17FRRU", "title": "Hand Clasp Chest Opener – Desk-Friendly Stretch", "channel": "Dr. Whitley Kelley" }
+  },
+  {
+    "id": "kol-capraz-cekme",
+    "name": "Kolu Çapraz Çekme",
+    "areas": ["omuz"],
+    "view": "front",
+    "anim": "cross-arm",
+    "durationSec": 46,
+    "summary": "Omzunun arka tarafını ve kürek kemiği çevresini esnetir.",
+    "steps": [
+      { "text": "Sağ kolunu göğsünün önünden sola doğru uzat.", "sec": 3 },
+      { "text": "Sol elinle dirseğinin hemen üstünden kolunu kendine doğru hafifçe çek ve tut.", "sec": 20 },
+      { "text": "Bırak, kolları değiştir.", "sec": 3 },
+      { "text": "Sol kolunu sağa uzat, sağ elinle çek ve tut.", "sec": 20 }
+    ],
+    "tips": ["Çektiğin taraftaki omzunu aşağıda tut, kulağına kaldırma."],
+    "caution": "Dirsek ekleminin üzerine değil, üst kola bastır.",
+    "youtube": { "id": "veZWtNGOxhE", "title": "Cross-Body Stretch", "channel": "BSR Physical Therapy" }
+  },
+  {
+    "id": "triceps",
+    "name": "Baş Üstü Kol Esnetme",
+    "areas": ["omuz", "sirt"],
+    "view": "front",
+    "anim": "triceps",
+    "durationSec": 47,
+    "summary": "Kolunun arkasını, koltuk altını ve sırtının yanlarını esnetir.",
+    "steps": [
+      { "text": "Sağ kolunu yukarı kaldır, dirseğini bükerek elini sırtına, kürek kemiklerinin arasına bırak.", "sec": 4 },
+      { "text": "Sol elinle sağ dirseğini hafifçe geriye ve aşağıya it, tut.", "sec": 20 },
+      { "text": "Bırak, taraf değiştir.", "sec": 3 },
+      { "text": "Sol kolunla aynı hareketi yap ve tut.", "sec": 20 }
+    ],
+    "tips": ["Başını öne eğme, kolunun arkasına doğru hafifçe it."],
+    "caution": "Omuz sıkışması yaşıyorsan kolunu tam yukarı kaldırmadan yap.",
+    "youtube": { "id": "0aKYbYt6eeI", "title": "Triceps Stretch", "channel": "Insync Physiotherapy" }
+  },
+  {
+    "id": "yana-esneme",
+    "name": "Oturarak Yana Esneme",
+    "areas": ["bel", "sirt"],
+    "view": "front",
+    "anim": "side-bend",
+    "durationSec": 40,
+    "summary": "Belinin ve gövdenin yan kaslarını uzatır.",
+    "steps": [
+      { "text": "Dik otur, ayakların yere tam bassın.", "sec": 4 },
+      { "text": "Sağ kolunu başının üzerine kaldır, gövdeni sola doğru eğ. Sol elin sandalyede dursun.", "sec": 15 },
+      { "text": "Yavaşça ortaya dön, kolunu indir.", "sec": 3 },
+      { "text": "Sol kolunu kaldır ve sağa doğru eğil.", "sec": 15 },
+      { "text": "Ortaya dön ve gevşe.", "sec": 3 }
+    ],
+    "tips": ["Öne ya da arkaya değil, tam yana eğil. Koltuk altını tavana doğru uzat."],
+    "caution": "Belinde sıkışma hissedersen daha az eğil.",
+    "youtube": { "id": "riUAQz37QHw", "title": "Seated Lateral Trunk Stretch", "channel": "Baptist Health" }
+  },
+  {
+    "id": "omurga-burma",
+    "name": "Oturarak Omurga Burma",
+    "areas": ["bel", "sirt"],
+    "view": "front",
+    "anim": "twist",
+    "durationSec": 50,
+    "summary": "Omurganı nazikçe döndürür, sırt ve bel tutulmasını açar.",
+    "steps": [
+      { "text": "Dik otur, iki ayağın yere bassın.", "sec": 3 },
+      { "text": "Sağ elini sol dizine koy, sol elinle sandalyenin arkasını tut.", "sec": 4 },
+      { "text": "Nefes alırken uzan, nefes verirken gövdeni sola çevir ve tut.", "sec": 18 },
+      { "text": "Yavaşça ortaya dön.", "sec": 4 },
+      { "text": "Şimdi sağa: sol elin sağ dizine, sağ elin sandalyenin arkasına. Çevir ve tut.", "sec": 21 }
+    ],
+    "tips": ["Her nefes verişte biraz daha dönebilirsin. Başın en son döner."],
+    "caution": "Bel fıtığın varsa ya da yakın zamanda bel ağrısı yaşadıysan çok hafif yap.",
+    "youtube": { "id": "v8J2iVyjDs0", "title": "Gentle Spinal Twist – Desk Stretch Series", "channel": "Propel Physiotherapy" }
+  },
+  {
+    "id": "kedi-inek",
+    "name": "Oturarak Kedi-İnek",
+    "areas": ["sirt", "bel"],
+    "view": "side",
+    "anim": "cat-cow",
+    "durationSec": 43,
+    "summary": "Omurganın her bölümünü nefesle birlikte hareket ettirir.",
+    "steps": [
+      { "text": "Ellerini dizlerine koy, ayakların yere bassın.", "sec": 3 },
+      { "text": "Nefes al: göğsünü öne it, belini hafifçe çukurlaştır, yukarı bak (inek).", "sec": 4 },
+      { "text": "Nefes ver: sırtını yuvarla, çeneni göğsüne yaklaştır, göbeğini içeri çek (kedi).", "sec": 4 },
+      { "text": "Nefesinle birlikte 8 kez daha tekrarla.", "sec": 32 }
+    ],
+    "tips": ["Hareketi nefesin yönetsin, acele etme."],
+    "caution": "Boynunu geriye çok atma.",
+    "youtube": { "id": "7Tnyx5hkFwA", "title": "Seated Cat Cow – Great Computer Break", "channel": "Dr. Brian Abelson" }
+  },
+  {
+    "id": "bilek-ic",
+    "name": "Bilek İç Esnetme",
+    "areas": ["bilek"],
+    "view": "side",
+    "anim": "wrist-flexor",
+    "durationSec": 36,
+    "summary": "Fare ve klavye kullanırken yorulan ön kol iç kaslarını esnetir.",
+    "steps": [
+      { "text": "Sağ kolunu önüne düz uzat, avuç içi karşıya baksın, parmakların yukarıda ('dur' işareti gibi).", "sec": 3 },
+      { "text": "Sol elinle parmaklarını kendine doğru hafifçe çek ve tut.", "sec": 15 },
+      { "text": "Bırak, el değiştir.", "sec": 3 },
+      { "text": "Sol kolunu uzat ve aynısını yap.", "sec": 15 }
+    ],
+    "tips": ["Dirseğini düz tut. Gerilmeyi ön kolunun iç tarafında hissetmelisin."],
+    "caution": "Karıncalanma olursa daha hafif çek.",
+    "youtube": { "id": "i-JV2PsFzWA", "title": "Wrist Flexor Stretches with Elbow Extension – Ask Doctor Jo", "channel": "AskDoctorJo" }
+  },
+  {
+    "id": "bilek-dis",
+    "name": "Bilek Dış Esnetme",
+    "areas": ["bilek"],
+    "view": "side",
+    "anim": "wrist-extensor",
+    "durationSec": 36,
+    "summary": "Ön kolunun üst tarafındaki kasları rahatlatır.",
+    "steps": [
+      { "text": "Sağ kolunu önüne düz uzat, avuç içi yere baksın.", "sec": 3 },
+      { "text": "Bileğini aşağı bük. Sol elinle elinin üstünden parmaklarını kendine doğru hafifçe bastır ve tut.", "sec": 15 },
+      { "text": "Bırak, el değiştir.", "sec": 3 },
+      { "text": "Sol kolunla tekrarla.", "sec": 15 }
+    ],
+    "tips": ["Omzunu kulağına kaldırma, kolun gevşek ama düz olsun."],
+    "caution": "Bileğinde keskin ağrı olursa bırak.",
+    "youtube": { "id": "80Y3HHMgo6w", "title": "Wrist Extensor Stretch with Elbow Extension – Ask Doctor Jo", "channel": "AskDoctorJo" }
+  },
+  {
+    "id": "figur-4",
+    "name": "Figür-4 Kalça Esnetme",
+    "areas": ["kalca", "bel"],
+    "view": "front",
+    "anim": "figure-four",
+    "durationSec": 52,
+    "summary": "Uzun oturmakla sıkışan kalça ve basen kaslarını açar.",
+    "steps": [
+      { "text": "Sandalyenin ön kısmına doğru otur.", "sec": 3 },
+      { "text": "Sağ ayak bileğini sol dizinin üstüne koy, sağ dizini yana doğru bırak.", "sec": 5 },
+      { "text": "Sırtını düz tutarak gövdeni hafifçe öne eğ. Kalçanda gerilmeyi hisset ve tut.", "sec": 20 },
+      { "text": "Yavaşça doğrul, bacak değiştir.", "sec": 4 },
+      { "text": "Sol bileğin sağ dizinin üstünde: öne eğil ve tut.", "sec": 20 }
+    ],
+    "tips": ["Etek giyiyorsan sadece bileği dizine koymak bile yeterli bir esneme sağlar."],
+    "caution": "Dizinde ağrı olursa öne eğilme kısmını atla.",
+    "youtube": { "id": "lI3VE8fUrXo", "title": "Piriformis Figure-of-4 Stretch (seated)", "channel": "Northallerton Osteopaths" }
+  },
+  {
+    "id": "arka-bacak",
+    "name": "Oturarak Arka Bacak Esnetme",
+    "areas": ["bacak", "bel"],
+    "view": "side",
+    "anim": "hamstring",
+    "durationSec": 50,
+    "summary": "Oturmaktan kısalan arka bacak kaslarını esnetir, belin yükünü azaltır.",
+    "steps": [
+      { "text": "Sandalyenin ön kısmına doğru otur.", "sec": 3 },
+      { "text": "Sağ bacağını öne uzat. Topuğun yerde, parmak uçların yukarı baksın.", "sec": 4 },
+      { "text": "Sırtını düz tutarak kalçandan öne doğru eğil. Bacağının arkasında gerilmeyi hisset.", "sec": 20 },
+      { "text": "Doğrul, bacak değiştir.", "sec": 3 },
+      { "text": "Sol bacağınla tekrarla.", "sec": 20 }
+    ],
+    "tips": ["Sırtını yuvarlama, göğsünü dizine doğru götürdüğünü düşün."],
+    "caution": "Tekerlekli sandalyede yapıyorsan sandalyenin kaymadığından emin ol.",
+    "youtube": { "id": "P3rK-zhrUwg", "title": "Seated Hamstring Stretch With Chair", "channel": "OrthoIndy" }
+  },
+  {
+    "id": "ayak-bilegi",
+    "name": "Ayak Bileği Çevirme",
+    "areas": ["bacak"],
+    "view": "side",
+    "anim": "ankle",
+    "durationSec": 46,
+    "summary": "Kan dolaşımını hızlandırır, bacaklardaki ağırlık hissine iyi gelir.",
+    "steps": [
+      { "text": "Sağ ayağını yerden hafifçe kaldır.", "sec": 3 },
+      { "text": "Ayak bileğinle 10 büyük daire çiz, sonra ters yöne 10 daire.", "sec": 20 },
+      { "text": "Ayağını indir, sol ayağını kaldır.", "sec": 3 },
+      { "text": "Sol ayağınla aynı daireleri çiz.", "sec": 20 }
+    ],
+    "tips": ["Parmak uçlarınla havada bir daire çizdiğini düşün."],
+    "caution": "Kramp girerse ayağını yere koy ve parmaklarını kendine doğru çek.",
+    "youtube": { "id": "sYAGbGEQMGE", "title": "Seated Ankle Rotation Chair Exercise", "channel": "Vive Health" }
+  },
+  {
+    "id": "goz-molasi",
+    "name": "Göz Molası 20-20-20",
+    "areas": ["goz"],
+    "view": "front",
+    "anim": "eyes",
+    "durationSec": 40,
+    "summary": "Ekrana bakmaktan yorulan gözlerini dinlendirir.",
+    "steps": [
+      { "text": "Ekrandan gözlerini ayır.", "sec": 2 },
+      { "text": "En az 6 metre uzaktaki bir noktaya bak. Pencere idealdir.", "sec": 20 },
+      { "text": "Gözlerini 10 kez yavaşça kırp.", "sec": 8 },
+      { "text": "Gözlerini kapat, avuçlarını hafifçe gözlerinin üstüne koy ve dinlen.", "sec": 10 }
+    ],
+    "tips": ["Kural: her 20 dakikada bir, 20 saniye boyunca, 20 feet (6 m) uzağa bak."],
+    "caution": "Gözlerin sürekli kuru ya da bulanıksa bir göz doktoruna görün.",
+    "youtube": { "id": "KRuEcCuhuMI", "title": "Take a Screen Break! The 20/20/20 Rule", "channel": "Brooks Rehabilitation" }
+  }
+]

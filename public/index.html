@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Prenses Molası</title>
+  <meta name="description" content="Masa başında kolayca yapabileceğin esneme hareketleri için tatlı hatırlatıcı.">
+
+  <!-- PWA / iOS -->
+  <link rel="manifest" href="/manifest.webmanifest">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Prenses 👑">
+  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+  <link rel="icon" href="/icons/icon.svg" type="image/svg+xml">
+  <link rel="icon" href="/icons/icon-192.png" type="image/png" sizes="192x192">
+  <meta name="theme-color" content="#fff5f9" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#1d1724" media="(prefers-color-scheme: dark)">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/app.css">
+  <link rel="stylesheet" href="/css/figure.css">
+  <script type="module" src="/js/app.js"></script>
+</head>
+<body>
+  <div id="app" class="app">
+    <main id="view" class="view" tabindex="-1">
+      <div class="boot">
+        <div class="boot-crown">👑</div>
+        <p>Yükleniyor…</p>
+      </div>
+    </main>
+    <nav id="tabbar" class="tabbar" hidden>
+      <a href="#/" data-tab="home">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-7.5-4.6-9.5-9.3C1.2 8.5 3.3 5 6.8 5c2 0 3.6 1.1 5.2 3 1.6-1.9 3.2-3 5.2-3 3.5 0 5.6 3.5 4.3 6.7C19.5 16.4 12 21 12 21z"/></svg>
+        <span>Bugün</span>
+      </a>
+      <a href="#/hareketler" data-tab="library">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="5" r="2.6"/><path d="M5 9.5c2.4.9 4.6 1.3 7 1.3s4.6-.4 7-1.3M12 10.8v4.4M12 15.2l-3.6 5.3M12 15.2l3.6 5.3" fill="none" stroke-width="2.2" stroke-linecap="round"/></svg>
+        <span>Hareketler</span>
+      </a>
+      <a href="#/ayarlar" data-tab="settings">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h4M12 17h8" fill="none" stroke-width="2.2" stroke-linecap="round"/><circle cx="16" cy="7" r="2.5" fill="none" stroke-width="2.2"/><circle cx="10" cy="17" r="2.5" fill="none" stroke-width="2.2"/></svg>
+        <span>Ayarlar</span>
+      </a>
+    </nav>
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  </div>
+</body>
+</html>

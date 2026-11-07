@@ -1,0 +1,67 @@
+name: Esneme hatırlatmaları
+
+on:
+  schedule:
+    # Her 10 dakikada bir, Türkiye saatiyle 06:00–23:59 arası (UTC 03–20).
+    # Tam saat başlarında GitHub kuyruğu yoğun olduğu için :03, :13 … dakikaları seçildi.
+    - cron: '3,13,23,33,43,53 3-20 * * *'
+    # Ayda bir: zamanlayıcıyı canlı tut (aşağıdaki keepalive işi).
+    - cron: '17 4 1 * *'
+  workflow_dispatch:
+    inputs:
+      uid:
+        description: 'Yalnızca bu kullanıcı (uygulamada Ayarlar → Kullanıcı kimliği). Boş = herkes'
+        required: false
+        default: ''
+      force:
+        description: 'Zamanlamayı yok say, hemen gönder (uid gerekli)'
+        type: boolean
+        default: false
+      dry_run:
+        description: 'Gönderme, sadece ne yapılacağını göster'
+        type: boolean
+        default: false
+
+concurrency:
+  group: reminders
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  send:
+    if: github.event_name == 'workflow_dispatch' || github.event.schedule != '17 4 1 * *'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --omit=dev --no-audit --no-fund
+      - name: Hatırlatmaları gönder
+        run: node scripts/send-reminders.mjs
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          VAPID_PUBLIC_KEY: ${{ secrets.VAPID_PUBLIC_KEY }}
+          VAPID_PRIVATE_KEY: ${{ secrets.VAPID_PRIVATE_KEY }}
+          VAPID_SUBJECT: ${{ secrets.VAPID_SUBJECT }}
+          INPUT_UID: ${{ inputs.uid }}
+          INPUT_FORCE: ${{ inputs.force }}
+          INPUT_DRY_RUN: ${{ inputs.dry_run }}
+
+  # Public repolarda 60 gün aktivite olmazsa zamanlanmış iş akışları durdurulur.
+  # Ayda bir bu iş akışını API ile yeniden etkinleştirerek sayacı sıfırlarız.
+  keepalive:
+    if: github.event.schedule == '17 4 1 * *'
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    permissions:
+      actions: write
+    steps:
+      - name: Zamanlayıcıyı canlı tut
+        run: gh api -X PUT "repos/${{ github.repository }}/actions/workflows/reminders.yml/enable"
+        env:
+          GH_TOKEN: ${{ github.token }}

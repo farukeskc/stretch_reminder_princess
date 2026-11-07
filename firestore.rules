@@ -1,0 +1,69 @@
+rules_version = '2';
+
+// Her anonim kullanıcı yalnızca kendi users/{uid} dokümanını okuyup yazabilir.
+// Gönderici script (GitHub Actions) Admin SDK kullandığı için bu kurallara tabi değildir.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isOwner(uid) {
+      return request.auth != null && request.auth.uid == uid;
+    }
+
+    function optString(d, k, max) {
+      return !(k in d) || (d[k] is string && d[k].size() <= max);
+    }
+
+    function optTime(d, k) {
+      return !(k in d) || d[k] == null || d[k] is timestamp;
+    }
+
+    function hm(v) {
+      return v is string && v.matches('^([01][0-9]|2[0-3]):[0-5][0-9]$');
+    }
+
+    function validUser(d) {
+      return d.keys().hasOnly([
+          'nickname', 'timezone', 'intervalMin', 'startTime', 'endTime', 'days', 'focusAreas',
+          'enabled', 'onboarded', 'pausedUntil', 'pushSubscription', 'needsResubscribe', 'platform',
+          'lastStretchAt', 'createdAt', 'updatedAt',
+          // yalnızca sunucunun yazdığı alanlar (birleştirilmiş dokümanda bulunurlar)
+          'lastSentAt', 'lastStretchId', 'recentStretchIds', 'sentCount'
+        ])
+        && optString(d, 'nickname', 30)
+        && optString(d, 'timezone', 64)
+        && optString(d, 'platform', 16)
+        && (!('intervalMin' in d) || (d.intervalMin is int && d.intervalMin >= 15 && d.intervalMin <= 240))
+        && (!('startTime' in d) || hm(d.startTime))
+        && (!('endTime' in d) || hm(d.endTime))
+        && (!('days' in d) || (d.days is list && d.days.size() <= 7))
+        && (!('focusAreas' in d) || (d.focusAreas is list && d.focusAreas.size() <= 8))
+        && (!('enabled' in d) || d.enabled is bool)
+        && (!('onboarded' in d) || d.onboarded is bool)
+        && (!('needsResubscribe' in d) || d.needsResubscribe is bool)
+        && (!('pushSubscription' in d) || (d.pushSubscription is map
+              && d.pushSubscription.endpoint is string
+              && d.pushSubscription.endpoint.matches('^https://.+')
+              && d.pushSubscription.endpoint.size() < 1024))
+        && optTime(d, 'pausedUntil')
+        && optTime(d, 'lastStretchAt');
+    }
+
+    // Sunucu alanlarını istemci değiştiremez.
+    function serverFieldsUntouched() {
+      return !request.resource.data.diff(resource == null ? {} : resource.data)
+        .affectedKeys()
+        .hasAny(['lastSentAt', 'lastStretchId', 'recentStretchIds', 'sentCount']);
+    }
+
+    match /users/{uid} {
+      allow read: if isOwner(uid);
+      allow create: if isOwner(uid) && validUser(request.resource.data) && serverFieldsUntouched();
+      allow update: if isOwner(uid) && validUser(request.resource.data) && serverFieldsUntouched();
+      allow delete: if isOwner(uid);
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

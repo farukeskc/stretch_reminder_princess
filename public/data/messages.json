@@ -1,0 +1,52 @@
+{
+  "titles": [
+    "Mola vakti {nick} 👑",
+    "Esneme zamanı 💕",
+    "Küçük bir mola? 🌸",
+    "{nick}, vücudun seni çağırıyor ✨",
+    "Prenses molası 👑"
+  ],
+  "generic": [
+    "{nick}, {stretch} zamanı! Sadece {dur} sürüyor 💖",
+    "Ekrana biraz ara ver güzelim, {stretch} yapalım mı? ({dur})",
+    "Bir prenses kambur oturmaz 😌 Hadi {stretch}, {dur}!",
+    "Kendine {dur} ayır: {stretch} seni bekliyor 🌷",
+    "{nick}, omurgan sana teşekkür edecek: {stretch} ({dur}) ✨",
+    "Mini mola alarmı! {stretch}, {dur}, söz kısa 💕",
+    "Seni çok seven biri hatırlatıyor: {stretch} zamanı 💌",
+    "Biraz hareket, çok mutluluk: {stretch} ({dur}) 🌸"
+  ],
+  "byArea": {
+    "boyun": [
+      "Boynun biraz şımartılmak istiyor {nick} 🦢 {stretch} ({dur})",
+      "Başını ekrandan kaldır, boynunu bir sev: {stretch} 💆‍♀️"
+    ],
+    "omuz": [
+      "Omuzların kulaklarına mı yapıştı? 😄 {stretch} ile bırakalım ({dur})",
+      "{nick}, omuzlarındaki yükü biraz bırak: {stretch} 💕"
+    ],
+    "sirt": [
+      "Sırtın dimdik, taç yerinde 👑 {stretch} zamanı ({dur})",
+      "Sırtına küçük bir iyilik: {stretch} 🌷"
+    ],
+    "bel": [
+      "Belin uzun süredir hareketsiz {nick} 🌙 {stretch} ile rahatlat ({dur})",
+      "Oturmaktan yorulan beline minik bir mola: {stretch} 💖"
+    ],
+    "bilek": [
+      "Klavyeye minik bir ara 💅 {stretch} ({dur})",
+      "Bileklerin çok çalıştı, biraz şımart: {stretch} ✨"
+    ],
+    "kalca": [
+      "Sandalyeden sıkılan kalçana minik bir iyilik 😌 {stretch} ({dur})"
+    ],
+    "bacak": [
+      "Bacaklarını uyandırma vakti {nick} 🦩 {stretch} ({dur})",
+      "Kan dolaşımına minik bir destek: {stretch} 💕"
+    ],
+    "goz": [
+      "Gözlerin ekrandan bir mola istiyor 👀 {stretch} ({dur})",
+      "Uzaklara bak {nick}, gözlerin dinlensin 🌅 {stretch}"
+    ]
+  }
+}

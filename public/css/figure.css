@@ -1,0 +1,98 @@
+/* Esneme karakteri: renkler ve SVG eklem ayarları. Animasyon keyframe'leri figure.js tarafından üretilir. */
+
+.fig {
+  --f-skin: #f8d5c2;
+  --f-skin-shade: #ecb9a1;
+  --f-hair: #5a3a33;
+  --f-top: #f48fb1;
+  --f-top-far: #d9739a;
+  --f-pants: #8a78d0;
+  --f-pants-far: #6f5fb5;
+  --f-shoe: #ffffff;
+  --f-shoe-far: #e6def5;
+  --f-crown: #f7c948;
+  --f-jewel: #ff5d8f;
+  --f-line: #4a3540;
+  --f-blush: #ff8fab;
+  --f-heart: #ffe3ee;
+  --c-back: #ece6f8;
+  --c-seat: #dcd2f0;
+  --c-metal: #b9aed6;
+  --f-shadow: rgba(90, 60, 130, 0.14);
+
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+:root[data-theme='dark'] .fig {
+  --c-back: #3a3352;
+  --c-seat: #4a4166;
+  --c-metal: #6b6190;
+  --f-shadow: rgba(0, 0, 0, 0.35);
+  --f-shoe: #f3eefc;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) .fig {
+    --c-back: #3a3352;
+    --c-seat: #4a4166;
+    --c-metal: #6b6190;
+    --f-shadow: rgba(0, 0, 0, 0.35);
+    --f-shoe: #f3eefc;
+  }
+}
+
+.fig g {
+  transform-box: view-box;
+  transform-origin: 0 0;
+}
+
+.fig .f-skin { fill: var(--f-skin); }
+.fig .f-skin.far { fill: var(--f-skin-shade); }
+.fig .f-skin-shade { fill: var(--f-skin-shade); }
+.fig .f-hair { fill: var(--f-hair); }
+.fig .f-top { fill: var(--f-top); }
+.fig .f-top.far { fill: var(--f-top-far); }
+.fig .f-pants { fill: var(--f-pants); }
+.fig .f-pants-shin { fill: var(--f-pants-far); }
+.fig .f-knee { fill: #fff; opacity: 0.18; }
+.fig .f-shoe { fill: var(--f-shoe); stroke: var(--c-metal); stroke-width: 1; }
+.fig .f-shoe.far { fill: var(--f-shoe-far); }
+.fig .f-crown { fill: var(--f-crown); stroke: #e0a92a; stroke-width: 0.8; stroke-linejoin: round; }
+.fig .f-jewel { fill: var(--f-jewel); }
+.fig .f-eye { fill: var(--f-line); }
+.fig .f-blush { fill: var(--f-blush); opacity: 0.55; }
+.fig .f-heart { fill: var(--f-heart); }
+.fig .f-mouth,
+.fig .f-nose { fill: none; stroke: var(--f-line); stroke-width: 1.4; stroke-linecap: round; }
+.fig .f-nose { stroke: var(--f-skin-shade); stroke-width: 1.6; }
+.fig .f-shadow { fill: var(--f-shadow); }
+
+.fig .f-sleeve { stroke: var(--f-top); stroke-width: 11; stroke-linecap: round; }
+.fig .f-sleeve.far { stroke: var(--f-top-far); }
+.fig .f-forearm { stroke: var(--f-skin); stroke-width: 8; stroke-linecap: round; }
+.fig .f-forearm.far { stroke: var(--f-skin-shade); }
+.fig .f-thigh { stroke: var(--f-pants); stroke-width: 17; stroke-linecap: round; }
+.fig .f-shin { stroke: var(--f-pants); stroke-width: 13; stroke-linecap: round; }
+.fig .f-thigh.far,
+.fig .f-shin.far { stroke: var(--f-pants-far); }
+
+.fig .c-back { fill: var(--c-back); }
+.fig .c-seat { fill: var(--c-seat); }
+.fig .c-stem { fill: var(--c-metal); }
+.fig .c-base { stroke: var(--c-metal); stroke-width: 5; stroke-linecap: round; }
+.fig .c-wheel { fill: var(--c-metal); }
+
+/* Kartlarda ve azaltılmış hareket tercihinde: anahtar karede dondur. */
+.fig.fig-still *,
+.fig.fig-still {
+  animation-play-state: paused !important;
+  animation-delay: var(--freeze) !important;
+}
+@media (prefers-reduced-motion: reduce) {
+  .fig * {
+    animation-play-state: paused !important;
+    animation-delay: var(--freeze) !important;
+  }
+}
