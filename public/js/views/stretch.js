@@ -1,8 +1,7 @@
 // Hareket detayı: animasyon, rehberli oturum, adımlar, video, tamamlama.
-import { store, updateUser } from '../store.js';
+import { store, markDone } from '../store.js';
 import { renderFigure } from '../figure.js';
 import { Player } from '../player.js';
-import { recordStretch } from '../stats.js';
 import { formatDuration } from '../shared/message.js';
 import { AREA_LABELS } from '../shared/defaults.js';
 import { clearBadge } from '../push.js';
@@ -122,11 +121,10 @@ export function stretchView(root, params, { navigate }) {
   async function complete() {
     if (done) return;
     done = true;
-    recordStretch(s.id, store.user.timezone);
     hearts();
     $('mark').hidden = true;
     try {
-      await updateUser({ lastStretchAt: 'now' });
+      await markDone([s.id]); // günlük programa işler + seri istatistiği
     } catch {
       /* çevrimdışı olabilir */
     }

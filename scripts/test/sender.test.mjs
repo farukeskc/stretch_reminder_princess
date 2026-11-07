@@ -2,6 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { runReminders } from '../lib/sender.mjs';
+import { dailyPlan } from '../../public/js/shared/plan.js';
 
 const stretches = JSON.parse(await readFile(new URL('../../public/data/stretches.json', import.meta.url), 'utf8'));
 const templates = JSON.parse(await readFile(new URL('../../public/data/messages.json', import.meta.url), 'utf8'));
@@ -47,16 +48,36 @@ function harness(users, sendImpl) {
 }
 
 test('zamanı gelen kullanıcıya gönderir ve kaydı günceller', async () => {
-  const h = harness([{ id: 'u1', data: { ...base, pushSubscription: sub('a'), recentStretchIds: ['goz-molasi'] }, updatedAtMs: 1 }]);
+  // 10:03 seansını yapmış (planın ilk 3 hareketi) → 11:03'te normal 3 hareket
+  const progress = { date: '2026-11-09', done: dailyPlan(base, stretches, '2026-11-09').slice(0, 3) };
+  const h = harness([{ id: 'u1', data: { ...base, pushSubscription: sub('a'), recentStretchIds: ['goz-molasi'], progress }, updatedAtMs: 1 }]);
   const s = await h.run();
   assert.deepEqual(s, { checked: 1, sent: 1, skipped: 0, removed: 0, failed: 0 });
   assert.equal(h.sent.length, 1);
   const p = h.sent[0].payload;
-  assert.match(p.url, /^\/#\/stretch\/[a-z0-9-]+$/);
+  assert.match(p.url, /^\/#\/seans\/[a-z0-9-]+(,[a-z0-9-]+)+$/);
   assert.ok(p.title && p.body && !p.body.includes('{'));
-  assert.equal(h.updates[0].stretchId, p.stretchId);
-  assert.deepEqual(h.updates[0].recentStretchIds, ['goz-molasi', p.stretchId]);
-  assert.notEqual(p.stretchId, 'goz-molasi');
+  const { session, recentStretchIds } = h.updates[0];
+  assert.deepEqual(session.ids, p.ids);
+  assert.equal(session.ids.length, 3, '11:03, hiç yapılmamış: normal 3 hareket');
+  assert.deepEqual(recentStretchIds.slice(-3), session.ids);
+});
+
+test('bugün seans atlanmışsa daha yüklü seans gönderir', async () => {
+  // 11:03: program 24, hiç yapılmamış, kalan 7 seans → 24/7 → 4 hareket (telafi)
+  const h = harness([{ id: 'u1', data: { ...base, pushSubscription: sub('a') } }]);
+  await h.run();
+  assert.equal(h.updates[0].session.load, 4);
+  assert.equal(h.updates[0].session.behind, true);
+  assert.match(h.sent[0].payload.body, /4 hareket|telafi|geride|yetiştirelim|uzun/);
+});
+
+test('dünkü ilerleme bugünü etkilemez', async () => {
+  const h = harness([
+    { id: 'u1', data: { ...base, pushSubscription: sub('a'), progress: { date: '2026-11-08', done: Array(30).fill('boyun-yana-egme') } } },
+  ]);
+  await h.run();
+  assert.equal(h.updates[0].session.doneCount, 0);
 });
 
 test('zamanı gelmeyen, aboneliği olmayan ve kapalı kullanıcıları atlar', async () => {

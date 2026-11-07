@@ -1,11 +1,11 @@
-// "Bugün" ekranı: selamlama, sıradaki hatırlatma, istatistikler, öneri, duraklatma.
+// "Bugün" ekranı: selamlama, sıradaki hatırlatma, günlük program, sana özel seans, duraklatma.
 import { store, updateUser } from '../store.js';
-import { nextReminderAt, endOfLocalDay, toMs, parseHM } from '../shared/schedule.js';
-import { pickStretch } from '../shared/pick.js';
-import { formatDuration } from '../shared/message.js';
+import { nextReminderAt, endOfLocalDay, toMs, localParts } from '../shared/schedule.js';
+import { composeSession, doneToday, sessionDuration } from '../shared/plan.js';
+import { formatDuration, approxDuration } from '../shared/message.js';
 import { AREA_LABELS } from '../shared/defaults.js';
 import { renderFigure } from '../figure.js';
-import { todayCount, streak, recentIds } from '../stats.js';
+import { streak } from '../stats.js';
 import { permission, hasSubscription } from '../push.js';
 import { pushSupported } from '../install.js';
 import { esc, fmtTime, fmtDayLabel, fmtToday, toast } from '../ui.js';
@@ -31,27 +31,54 @@ function statusBlock(u) {
     // Saatten sonra ek kullanmıyoruz ('a/'e ünlü uyumu saate göre değişir).
     const label = forDay ? 'Bugünlük sessizde 🌙' : 'Sessizdeyim 🤫';
     const sub = forDay ? 'Yarın kaldığımız yerden devam ederiz.' : `Hatırlatmalar saat ${fmtTime(new Date(paused), tz)} sonrası devam edecek.`;
-    return `<div class="card-title">Mola modu</div><div class="next-time" style="font-size:1.6rem">${label}</div><p class="next-sub">${sub} İstersen yine de bir hareket yapabilirsin.</p>`;
+    return `<div class="card-title">Mola modu</div><div class="next-time" style="font-size:1.6rem">${label}</div><p class="next-sub">${sub}</p>`;
   }
   const next = nextReminderAt(u);
   if (!next) {
-    return `<div class="card-title">Sıradaki hatırlatma</div><div class="next-time" style="font-size:1.6rem">Planlanmadı</div><p class="next-sub">Ayarlar'dan gün ve saat seç.</p>`;
+    return `<div class="card-title">Sıradaki seans</div><div class="next-time" style="font-size:1.6rem">Planlanmadı</div><p class="next-sub">Ayarlar'dan gün ve saat seç.</p>`;
   }
+  const est = composeSession(u, store.stretches, { now: next, rng: () => 0.5 });
   const day = fmtDayLabel(next, tz);
-  return `<div class="card-title">Sıradaki hatırlatma</div>
+  return `<div class="card-title">Sıradaki seans</div>
     <div class="next-time">${fmtTime(next, tz)}</div>
-    <p class="next-sub">${day === 'Bugün' ? 'Bugün' : esc(day)} · yaklaşık, birkaç dakika sapabilir</p>`;
+    <p class="next-sub">${day === 'Bugün' ? 'Bugün' : esc(day)} · ${est.load} hareket · ${approxDuration(sessionDuration(est.ids, store.stretches))}</p>`;
+}
+
+function programBlock(u, s) {
+  const now = new Date();
+  const workday = u.days.includes(localParts(now, u.timezone).dow);
+  const pct = s.planTotal ? Math.round((s.doneCount / s.planTotal) * 100) : 0;
+  let line;
+  if (s.complete) line = 'Bugünkü programı tamamladın 👑 Harikasın!';
+  else if (!workday) line = 'Bugün izin günün. İstersen yine de minik bir seans yapabilirsin 💕';
+  else if (s.sessionsLeft === 0) line = 'Bugünkü mesai bitti. Kalanlar yarına devretmez, dert etme 💕';
+  else if (s.behind) line = `Biraz geride kaldık 💪 Kalan ${s.sessionsLeft} seans biraz daha uzun olacak.`;
+  else line = `Bugün ${s.sessionsLeft} seans kaldı, her biri yaklaşık ${Math.max(2, Math.ceil(s.remainingCount / s.sessionsLeft))} hareket.`;
+  const focus = u.focusAreas.map((a) => AREA_LABELS[a]).filter(Boolean);
+  return `
+    <div class="row between">
+      <div class="card-title" style="margin:0">Bugünkü program</div>
+      <span class="tiny muted" style="font-weight:800">${st(u)}</span>
+    </div>
+    <div class="row" style="align-items:baseline;gap:6px;margin-top:6px">
+      <span class="next-time" style="font-size:2rem">${s.doneCount}</span>
+      <span class="muted" style="font-weight:800">/ ${s.planTotal} hareket</span>
+    </div>
+    <div class="progress"><i style="width:${pct}%"></i></div>
+    <p class="small muted" style="margin-top:10px">${line}</p>
+    ${focus.length ? `<div class="chips" style="margin-top:10px"><span class="chip plain">Odak</span>${focus.map((f) => `<span class="chip">${f}</span>`).join('')}</div>` : ''}`;
+}
+
+function st(u) {
+  const n = streak(u.timezone);
+  return n > 0 ? `🔥 ${n} günlük seri` : '';
 }
 
 export function homeView(root, _params, { rerender }) {
   const u = store.user;
   const tz = u.timezone;
-  const count = todayCount(tz);
-  const st = streak(tz);
-  const s = parseHM(u.startTime);
-  const e = parseHM(u.endTime);
-  const goal = s != null && e != null && e > s ? Math.max(1, Math.floor((e - s) / u.intervalMin)) : 6;
-  const suggestion = pickStretch(store.stretches, { focusAreas: u.focusAreas, recentIds: recentIds(4) });
+  const session = composeSession(u, store.stretches, { done: doneToday(u), lastIds: u.lastSession?.ids || [] });
+  const moves = session.ids.map((id) => store.byId.get(id));
   const paused = (toMs(u.pausedUntil) ?? 0) > Date.now();
 
   root.innerHTML = `
@@ -66,30 +93,23 @@ export function homeView(root, _params, { rerender }) {
 
     <section class="card hero">${statusBlock(u)}</section>
 
-    <section class="stats">
-      <div class="stat">
-        <b>${count}</b><span>bugünkü esneme</span>
-        <div class="dots">${Array.from({ length: Math.min(goal, 16) }, (_, i) => `<i class="${i < count ? 'on' : ''}"></i>`).join('')}</div>
-      </div>
-      <div class="stat">
-        <b>${st} ${st > 0 ? '🔥' : ''}</b><span>günlük seri</span>
-        <p class="tiny muted" style="margin-top:8px">${st > 2 ? 'Harikasın, böyle devam!' : st > 0 ? 'Güzel başlangıç 💕' : 'İlk esnemeyle başlasın'}</p>
-      </div>
-    </section>
+    <section class="card">${programBlock(u, session)}</section>
 
     <section class="card">
-      <div class="card-title">Şimdi sana iyi gelebilir</div>
-      <a class="suggest" href="#/stretch/${suggestion.id}" style="text-decoration:none;color:inherit">
-        <div class="fig-wrap">${renderFigure(suggestion)}</div>
-        <div>
-          <h2>${esc(suggestion.name)}</h2>
-          <div class="chips">
-            <span class="chip pink">${formatDuration(suggestion.durationSec)}</span>
-            ${suggestion.areas.map((a) => `<span class="chip">${AREA_LABELS[a]}</span>`).join('')}
-          </div>
-        </div>
-      </a>
-      <a class="btn primary block" style="margin-top:14px" href="#/stretch/${suggestion.id}">Şimdi esne ✨</a>
+      <div class="card-title">${session.complete ? 'Bonus seans' : 'Şimdi sana özel seans'}</div>
+      <ol class="move-list">
+        ${moves
+          .map(
+            (m, i) => `
+          <li class="move">
+            <span class="move-no">${i + 1}</span>
+            <div class="mini-fig">${renderFigure(m, { still: true })}</div>
+            <div class="grow"><b>${esc(m.name)}</b><span class="tiny muted">${formatDuration(m.durationSec)} · ${m.areas.map((a) => AREA_LABELS[a]).join(', ')}</span></div>
+          </li>`,
+          )
+          .join('')}
+      </ol>
+      <a class="btn primary block" style="margin-top:14px" href="#/seans/${session.ids.join(',')}">Seansa başla ✨ <span style="opacity:.8;font-weight:700">${approxDuration(sessionDuration(session.ids, store.stretches))}</span></a>
     </section>
 
     <section class="btn-row">

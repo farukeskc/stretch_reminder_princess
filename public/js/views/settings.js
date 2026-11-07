@@ -3,8 +3,8 @@ import { store, updateUser } from '../store.js';
 import { enablePush, permission, hasSubscription, showTestNotification, syncSubscription } from '../push.js';
 import { pushSupported, isIOS, isStandalone } from '../install.js';
 import { isFirebaseConfigured, isVapidConfigured, APP_VERSION } from '../config.js';
-import { pickStretch } from '../shared/pick.js';
-import { buildNotification } from '../shared/message.js';
+import { composeSession, sessionsPerDay, BASE_LOAD, FOCUS_REPS, MAX_LOAD } from '../shared/plan.js';
+import { buildSessionNotification } from '../shared/message.js';
 import { toMs } from '../shared/schedule.js';
 import { nicknameHtml, scheduleHtml, areasHtml, bindControls } from './controls.js';
 import { esc, toast } from '../ui.js';
@@ -31,6 +31,10 @@ export function settingsView(root, _params, { rerender }) {
     <section class="card stack">
       <h2>Program</h2>
       ${scheduleHtml(u)}
+      <div class="card soft small stack" style="gap:6px">
+        <p><b>Günlük program otomatik hazırlanır.</b> Bu ayarlarla günde <b id="sess-count">${sessionsPerDay(u)}</b> seans, toplam <b id="plan-count">${sessionsPerDay(u) * BASE_LOAD}</b> hareket.</p>
+        <p class="muted">Her seans normalde ${BASE_LOAD} hareket. Ağrıyan bölgelerinin hareketleri programa günde ${FOCUS_REPS} kez girer. Seans atlarsan kalan seanslar en fazla ${MAX_LOAD} harekete kadar uzar. Program her gün sıfırlanır.</p>
+      </div>
     </section>
 
     <section class="card stack">${areasHtml(u)}</section>
@@ -51,6 +55,9 @@ export function settingsView(root, _params, { rerender }) {
   let timer;
   const save = (partial) => {
     Object.assign(pending, partial);
+    const preview = sessionsPerDay({ ...store.user, ...pending });
+    root.querySelector('#sess-count').textContent = preview;
+    root.querySelector('#plan-count').textContent = preview * BASE_LOAD;
     clearTimeout(timer);
     timer = setTimeout(async () => {
       const data = pending;
@@ -124,8 +131,8 @@ async function renderPushStatus(el, rerender) {
     });
   });
   el.querySelector('#test')?.addEventListener('click', async () => {
-    const s = pickStretch(store.stretches, { focusAreas: store.user.focusAreas });
-    const n = buildNotification(store.user, s, store.messages);
+    const s = composeSession(store.user, store.stretches);
+    const n = buildSessionNotification(store.user, s, store.byId, store.messages);
     try {
       await showTestNotification(n.title, n.body, n.url);
       toast('Gönderildi, bildirim merkezine bak 🔔');

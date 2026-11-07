@@ -163,6 +163,17 @@ p { margin: 0; }
 .suggest .fig-wrap { background: var(--surface-2); border-radius: 18px; padding: 6px; }
 .suggest h2 { margin: 2px 0 6px; }
 
+/* Seans hareket listesi */
+.move-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.move { display: grid; grid-template-columns: 26px 52px 1fr; gap: 10px; align-items: center; padding: 6px 10px 6px 6px; border-radius: var(--radius-sm); background: var(--surface-2); }
+.move b { display: block; font-size: 0.95rem; line-height: 1.25; }
+.move .move-no { width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; background: var(--surface); color: var(--primary); font-weight: 900; font-size: 0.8rem; }
+.move .mini-fig { width: 52px; height: 52px; border-radius: 12px; background: var(--surface); overflow: hidden; display: grid; place-items: center; }
+.move .mini-fig .fig { width: 46px; }
+.move.done .move-no { background: var(--primary); color: #fff; }
+.move.skipped { opacity: 0.5; }
+.move.active { background: var(--primary-soft); }
+
 /* Butonlar */
 .btn {
   display: inline-flex; align-items: center; justify-content: center; gap: 8px;

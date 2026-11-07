@@ -5,6 +5,7 @@ import { needsInstall } from './install.js';
 import { homeView } from './views/home.js';
 import { libraryView } from './views/library.js';
 import { stretchView } from './views/stretch.js';
+import { sessionView } from './views/session.js';
 import { settingsView } from './views/settings.js';
 import { onboardingView } from './views/onboarding.js';
 import { installView } from './views/install.js';
@@ -16,7 +17,10 @@ const ROUTES = [
   { re: /^#\/ayarlar$/, view: settingsView, tab: 'settings' },
   { re: /^#\/hosgeldin$/, view: onboardingView, tab: null, bare: true },
   { re: /^#\/kurulum$/, view: installView, tab: null, bare: true },
+  { re: /^#\/seans\/([\w,-]+)$/, view: sessionView, tab: null },
 ];
+const ONBOARDING = ROUTES[4];
+const INSTALL = ROUTES[5];
 
 const viewEl = document.getElementById('view');
 const tabbar = document.getElementById('tabbar');
@@ -39,10 +43,10 @@ function navigate(hash) {
 function resolve(hash) {
   // iPhone'da Safari sekmesindeyse önce kurulum rehberi (göz atmaya izin var).
   if (needsInstall()) {
-    const browsing = /^#\/(hareketler|stretch\/)/.test(hash);
-    if (!(browsing && peeking())) return { route: ROUTES[5], params: [] };
-  } else if (!store.user.onboarded && !/^#\/(stretch\/|hareketler)/.test(hash)) {
-    return { route: ROUTES[4], params: [] };
+    const browsing = /^#\/(hareketler|stretch\/|seans\/)/.test(hash);
+    if (!(browsing && peeking())) return { route: INSTALL, params: [] };
+  } else if (!store.user.onboarded && !/^#\/(stretch\/|hareketler|seans\/)/.test(hash)) {
+    return { route: ONBOARDING, params: [] };
   }
   for (const route of ROUTES) {
     const m = route.re.exec(hash || '#/');

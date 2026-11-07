@@ -1,6 +1,6 @@
 # Prenses Molası 👑
 
-Masa başında uzun süre oturanlar için esneme hatırlatıcısı. iPhone'a kurulabilen bir web uygulamasıdır (PWA). Gün içinde ayarlanan aralıklarla bildirim gönderir. Her hareket için animasyonlu çizim, adım adım geri sayım ve video anlatım içerir.
+Masa başında uzun süre oturanlar için esneme hatırlatıcısı. iPhone'a kurulabilen bir web uygulamasıdır (PWA). Gün içinde ayarlanan aralıklarla birkaç hareketlik minik **seanslar** gönderir, ağrıyan bölgelere göre günlük bir program izler. Her hareket için animasyonlu çizim, adım adım geri sayım ve video anlatım içerir.
 
 - **Uygulama:** Firebase Hosting'de, sade HTML/CSS/JS (build adımı yok).
 - **Veri:** Firestore (`users/{uid}`), anonim giriş.
@@ -10,7 +10,7 @@ Masa başında uzun süre oturanlar için esneme hatırlatıcısı. iPhone'a kur
 iPhone (Ana Ekran uygulaması) ──abonelik──▶ Firestore users/{uid}
                                                ▲
 GitHub Actions (10 dk'da bir) ── okur/yazar ───┘
-        └── web-push ──▶ Apple push servisi ──▶ 🔔 bildirim ──dokun──▶ /#/stretch/<hareket>
+        └── web-push ──▶ Apple push servisi ──▶ 🔔 bildirim ──dokun──▶ /#/seans/<hareketler>
 ```
 
 ---
@@ -61,7 +61,10 @@ Adres `https://<proje-id>.web.app` olur.
    | `VAPID_PRIVATE_KEY` | Adım 2'deki private key |
    | `VAPID_SUBJECT` | `mailto:senin@adresin.com` (Apple geçerli bir `mailto:` ya da `https:` ister) |
 
-4. **Actions** sekmesinde iş akışlarını etkinleştir. `Esneme hatırlatmaları` artık 10 dakikada bir çalışacak.
+4. Repo sayfasındaki **Actions** sekmesine gir ve solda **Esneme hatırlatmaları** ile **Testler** iş akışlarının listelendiğini kontrol et. Yeni repolarda bunlar otomatik açıktır, ek bir şey yapman gerekmez. `Esneme hatırlatmaları` artık 10 dakikada bir çalışacak.
+   - Listede değil de yeşil **"I understand my workflows, go ahead and enable them"** butonu görürsen ona tıkla (genelde fork'lanmış repolarda çıkar).
+   - Actions kapalı uyarısı görürsen: **Settings → Actions → General → Allow all actions and reusable workflows → Save**.
+   - Zamanlanmış ilk çalışmayı beklemene gerek yok: **Esneme hatırlatmaları**'na tıklayıp sağdaki **Run workflow** butonuyla elle de tetikleyebilirsin.
 
 **Neden public repo?** GitHub Actions public repolarda ücretsiz ve sınırsızdır. Private repoda ayda 2000 dakika var. Bu zamanlayıcı ayda yaklaşık 3200 çalışma yapar, her biri en az 1 dakika sayılır. Repoda gizli bir şey yok: anahtarlar Secrets'ta, veriler kurallarla korunan Firestore'da duruyor.
 
@@ -81,25 +84,36 @@ Public repolarda 60 gün hiç aktivite olmazsa GitHub zamanlanmış iş akışla
 
 1. Uygulamada **Ayarlar → Test bildirimi 🔔**: yerel bildirim gelmeli.
 2. **Ayarlar** ekranının altındaki **Kullanıcı kimliği**ne dokun, kopyalanır.
-3. GitHub → **Actions → Esneme hatırlatmaları → Run workflow**: `uid` alanına kimliği yapıştır, `force` kutusunu işaretle, çalıştır. Bir iki dakika içinde gerçek push bildirimi gelmeli. Bildirime dokununca ilgili hareket ekranı açılmalı.
+3. GitHub → **Actions → Esneme hatırlatmaları → Run workflow**: `uid` alanına kimliği yapıştır, `force` kutusunu işaretle, çalıştır. Bir iki dakika içinde gerçek push bildirimi gelmeli. Bildirime dokununca seans ekranı açılmalı.
 4. Sonrasında mesai saatlerinde kendiliğinden gelir. Ayrıntılar için Actions sekmesindeki çalışma loglarına bakabilirsin.
 
 ---
 
 ## Nasıl çalışır?
 
-- **Zamanlama** ([`schedule.js`](public/js/shared/schedule.js)): Seçili gün ve saatler içinde, son bildirimden (ya da kendi isteğiyle yaptığı son esnemeden) bu yana **aralık − 5 dk** geçtiyse bildirim gönderilir. Günün ilk hatırlatması mesai başlangıcından bir aralık sonra gelir. Cron 10 dakikada bir çalıştığı için bildirimler birkaç dakika sapabilir.
-- **Hareket seçimi** ([`pick.js`](public/js/shared/pick.js)): Ağrıyan bölgeler 3 kat ağırlıklıdır. Son 4 hareket tekrarlanmaz.
-- **Mola modu:** "1 saat sessiz" ve "Bugünlük yeter" butonları `pausedUntil` alanını ayarlar.
-- Zamanlama ve seçim mantığı **tek kaynaktan** gelir: aynı dosyaları hem uygulama (ör. "sıradaki hatırlatma 14:20") hem de gönderici script kullanır.
+### Günlük program ve seanslar ([`plan.js`](public/js/shared/plan.js))
+
+- **Günlük program:** Her gün için `seans sayısı × 3` hareketlik bir program hesaplanır. Örneğin hafta içi 09:00–18:00, saatte bir için 8 seans ve 24 hareket. Ağrıyan bölgelerin **her hareketi programa günde 2 kez** girer, kalan yer diğer bölgelerden çeşitli hareketlerle dolar. Program gün ve ayarlara göre sabittir; hem uygulama hem gönderici aynı programı hesaplar.
+- **Seans:** Her bildirim birkaç farklı hareketten oluşan bir seanstır. Hareketleri sistem seçer: önce ağrı hareketleri, mümkünse farklı bölgelerden, baştan aşağı sıralı (boyun → omuz → sırt → … → göz). Bildirime dokununca seans ekranı açılır; hareketler geri sayımla art arda akar ve her biten hareket anında programa işlenir.
+- **Telafi:** Her seansın yükü `kalan hareket ÷ kalan seans` hesabıyla belirlenir, en az 2, **en fazla 6** hareket. Seans atlanırsa yapılmayan hareketler kalan seanslara dağılır, yük kendiliğinden artar ve bildirimde "biraz geride kaldık" yazar. Program bitince kalan seanslar 2 hareketlik bonus olur.
+- **Sıfırlama:** Program her gün sıfırlanır, yetişmeyen hareketler ertesi güne devretmez. Kurulum günü yalnızca kurulumdan sonraki seanslar planlanır, ilk gün "geride" başlanmaz.
+- **İlerleme takibi:** Yapılan hareketler Firestore'da `progress: {date, done[]}` olarak tutulur. Sunucu kalan yükü buradan hesaplar, gönderdiği seansı da `lastSession` olarak kaydeder.
+
+### Zamanlama ve diğerleri
+
+- **Zamanlama** ([`schedule.js`](public/js/shared/schedule.js)): Seçili gün ve saatler içinde, son bildirimden (ya da kendi isteğiyle yaptığı son esnemeden) bu yana **aralık − 5 dk** geçtiyse bildirim gönderilir. Cron 10 dakikada bir çalıştığı için bildirimler birkaç dakika sapabilir.
+- **Mola modu:** "1 saat sessiz" ve "Bugünlük yeter" butonları `pausedUntil` alanını ayarlar. Sessizdeyken atlanan seanslar da telafiye girer.
+- Zamanlama, program ve seans mantığı **tek kaynaktan** gelir: aynı dosyaları hem uygulama (ör. "sıradaki seans 14:20 · 3 hareket") hem de gönderici script kullanır.
 - Geçersiz abonelikler (uygulama silinmiş, izin kaldırılmış) gönderici tarafından otomatik temizlenir. Uygulama bir sonraki açılışta yeniden abone olur.
+- Actions loglarında her gönderim şöyle görünür: `gönderildi (201) → program 9/24, kalan seans 5, yük 4 (telafi) → …`
 
 ## Kişiselleştirme
 
 | Ne | Nerede |
 |---|---|
 | Varsayılan hitap, saatler, aralık | [`public/js/shared/defaults.js`](public/js/shared/defaults.js) (kullanıcı uygulamadan da değiştirebilir) |
-| Bildirim mesajları | [`public/data/messages.json`](public/data/messages.json): `{nick}`, `{stretch}`, `{dur}` değişkenleri |
+| Seans boyutu (3), ağrı tekrarı (2), telafi üst sınırı (6) | [`public/js/shared/plan.js`](public/js/shared/plan.js): `BASE_LOAD`, `FOCUS_REPS`, `MAX_LOAD` |
+| Bildirim mesajları | [`public/data/messages.json`](public/data/messages.json): `session` (normal), `catchup` (telafi), `bonus` (program bitti); değişkenler `{nick}`, `{count}`, `{list}`, `{dur}` |
 | Hareketler, adımlar, videolar | [`public/data/stretches.json`](public/data/stretches.json) |
 | Animasyon pozları | [`public/js/figure.js`](public/js/figure.js), `ANIMS` |
 | Renkler | [`public/css/app.css`](public/css/app.css) (`:root`), karakter renkleri: [`public/css/figure.css`](public/css/figure.css) |
@@ -107,7 +121,7 @@ Public repolarda 60 gün hiç aktivite olmazsa GitHub zamanlanmış iş akışla
 
 Hareket ya da mesaj ekledikten sonra `npm run check:data` ile doğrula.
 
-**Güncelleme yayınlarken:** [`public/sw.js`](public/sw.js) içindeki `CACHE` sürümünü artır (`prenses-v1` → `prenses-v2`). Böylece telefondaki eski önbellek temizlenir.
+**Güncelleme yayınlarken:** [`public/sw.js`](public/sw.js) içindeki `CACHE` sürümünü artır (ör. `prenses-v2` → `prenses-v3`). Böylece telefondaki eski önbellek temizlenir.
 
 ## Video kontrol listesi
 

@@ -25,9 +25,9 @@ service cloud.firestore {
       return d.keys().hasOnly([
           'nickname', 'timezone', 'intervalMin', 'startTime', 'endTime', 'days', 'focusAreas',
           'enabled', 'onboarded', 'pausedUntil', 'pushSubscription', 'needsResubscribe', 'platform',
-          'lastStretchAt', 'createdAt', 'updatedAt',
+          'lastStretchAt', 'createdAt', 'updatedAt', 'progress',
           // yalnızca sunucunun yazdığı alanlar (birleştirilmiş dokümanda bulunurlar)
-          'lastSentAt', 'lastStretchId', 'recentStretchIds', 'sentCount'
+          'lastSentAt', 'lastStretchId', 'recentStretchIds', 'sentCount', 'lastSession'
         ])
         && optString(d, 'nickname', 30)
         && optString(d, 'timezone', 64)
@@ -45,14 +45,20 @@ service cloud.firestore {
               && d.pushSubscription.endpoint.matches('^https://.+')
               && d.pushSubscription.endpoint.size() < 1024))
         && optTime(d, 'pausedUntil')
-        && optTime(d, 'lastStretchAt');
+        && optTime(d, 'lastStretchAt')
+        && (!('progress' in d) || (d.progress is map
+              && d.progress.keys().hasOnly(['date', 'done'])
+              && d.progress.date is string
+              && d.progress.date.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')
+              && d.progress.done is list
+              && d.progress.done.size() <= 200));
     }
 
     // Sunucu alanlarını istemci değiştiremez.
     function serverFieldsUntouched() {
       return !request.resource.data.diff(resource == null ? {} : resource.data)
         .affectedKeys()
-        .hasAny(['lastSentAt', 'lastStretchId', 'recentStretchIds', 'sentCount']);
+        .hasAny(['lastSentAt', 'lastStretchId', 'recentStretchIds', 'sentCount', 'lastSession']);
     }
 
     match /users/{uid} {

@@ -3,15 +3,22 @@
 export class Player {
   /**
    * @param {{text:string, sec:number}[]} steps
-   * @param {{ onTick?: Function, onStep?: Function, onDone?: Function, sound?: boolean }} opts
+   * @param {{ onTick?: Function, onStep?: Function, onDone?: Function, sound?: boolean,
+   *           audio?: AudioContext, manageWakeLock?: boolean, startChime?: boolean }} opts
+   *   audio: paylaşılan ses bağlamı (seans boyunca tek bağlam; iOS'ta dokunuşla açılmalı)
+   *   manageWakeLock: false ise ekranı açık tutmayı çağıran yönetir
    */
-  constructor(steps, { onTick, onStep, onDone, sound = true } = {}) {
+  constructor(steps, { onTick, onStep, onDone, sound = true, audio = null, manageWakeLock = true, startChime = true } = {}) {
     this.steps = steps;
     this.total = steps.reduce((a, s) => a + s.sec, 0);
     this.onTick = onTick;
     this.onStep = onStep;
     this.onDone = onDone;
     this.sound = sound;
+    this.sharedAudio = !!audio;
+    this.audio = audio;
+    this.manageWakeLock = manageWakeLock;
+    this.startChime = startChime;
     this.index = 0;
     this.stepElapsed = 0; // sn
     this.running = false;
@@ -44,7 +51,7 @@ export class Player {
     document.addEventListener('visibilitychange', this.onVisibility);
     this.lockScreen();
     this.onStep?.(this.index);
-    this.chime(660);
+    if (this.startChime) this.chime(660);
   }
 
   pause() {
@@ -110,10 +117,11 @@ export class Player {
   destroy() {
     this.pause();
     document.removeEventListener('visibilitychange', this.onVisibility);
-    this.audio?.close?.();
+    if (!this.sharedAudio) this.audio?.close?.();
   }
 
   async lockScreen() {
+    if (!this.manageWakeLock) return;
     try {
       if ('wakeLock' in navigator && !this.wakeLock) {
         this.wakeLock = await navigator.wakeLock.request('screen');
@@ -127,6 +135,7 @@ export class Player {
   }
 
   releaseScreen() {
+    if (!this.manageWakeLock) return;
     this.wakeLock?.release?.().catch?.(() => {});
     this.wakeLock = null;
   }

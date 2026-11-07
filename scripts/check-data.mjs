@@ -26,9 +26,13 @@ for (const s of stretches) {
   if (s.youtube && !/^[\w-]{11}$/.test(s.youtube.id)) errors.push(`${where} YouTube id hatalı`);
 }
 
-for (const area of Object.keys(messages.byArea || {})) if (!areaIds.has(area)) errors.push(`messages.byArea bilinmeyen bölge: ${area}`);
-for (const t of [...messages.titles, ...messages.generic, ...Object.values(messages.byArea).flat()]) {
-  const unknown = [...t.matchAll(/\{(\w+)\}/g)].map((m) => m[1]).filter((k) => !['nick', 'stretch', 'dur'].includes(k));
+const GROUPS = ['titles', 'session', 'catchup', 'bonus'];
+const VARS = ['nick', 'count', 'list', 'dur'];
+for (const k of GROUPS) {
+  if (!Array.isArray(messages[k]) || !messages[k].length) errors.push(`messages.${k} boş ya da eksik`);
+}
+for (const t of GROUPS.flatMap((k) => messages[k] || [])) {
+  const unknown = [...t.matchAll(/\{(\w+)\}/g)].map((m) => m[1]).filter((v) => !VARS.includes(v));
   if (unknown.length) errors.push(`Mesajda bilinmeyen değişken ${unknown}: "${t}"`);
 }
 
@@ -36,4 +40,5 @@ if (errors.length) {
   console.error(errors.map((e) => `❌ ${e}`).join('\n'));
   process.exit(1);
 }
-console.log(`✓ ${stretches.length} hareket ve ${messages.generic.length + messages.titles.length} mesaj şablonu geçerli.`);
+const templateCount = GROUPS.reduce((a, k) => a + messages[k].length, 0);
+console.log(`✓ ${stretches.length} hareket ve ${templateCount} mesaj şablonu geçerli.`);

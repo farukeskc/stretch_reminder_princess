@@ -9,7 +9,7 @@ import {
   endOfLocalDay,
 } from '../../public/js/shared/schedule.js';
 import { pickStretch, pushRecent } from '../../public/js/shared/pick.js';
-import { buildNotification, formatDuration, fill } from '../../public/js/shared/message.js';
+import { formatDuration, fill } from '../../public/js/shared/message.js';
 
 // 2026-11-09 Pazartesi. İstanbul = UTC+3 (yaz saati yok).
 const ist = (s) => new Date(`2026-11-${s}:00+03:00`);
@@ -145,18 +145,9 @@ test('pushRecent sona ekler, tekrarı kaldırır, 6 ile sınırlar', () => {
 });
 
 // --- message ---
-test('buildNotification ve yardımcılar', () => {
+test('formatDuration ve fill', () => {
   assert.equal(formatDuration(45), '45 sn');
   assert.equal(formatDuration(60), '1 dk');
   assert.equal(formatDuration(95), '1 dk 35 sn');
   assert.equal(fill('{nick} {x}', { nick: 'P' }), 'P {x}');
-  const n = buildNotification(
-    { nickname: 'Prensesim' },
-    { id: 'a', name: 'Boyun Yana Eğme', areas: ['boyun'], durationSec: 45 },
-    { titles: ['Mola vakti {nick}'], generic: ['{stretch} ({dur})'], byArea: {} },
-    () => 0,
-  );
-  assert.equal(n.title, 'Mola vakti Prensesim');
-  assert.equal(n.body, 'Boyun Yana Eğme (45 sn)');
-  assert.equal(n.url, '/#/stretch/a');
 });

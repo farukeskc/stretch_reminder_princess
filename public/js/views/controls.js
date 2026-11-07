@@ -43,7 +43,7 @@ export function areasHtml(user) {
   return `
     <div class="field">
       <span class="label">Nerelerin ağrıyor ya da yoruluyor?</span>
-      <p class="tiny muted">Seçtiğin bölgelere yönelik hareketler daha sık gelir.</p>
+      <p class="tiny muted">Seçtiğin bölgelerin hareketleri günlük programına her gün 2 kez girer ve öncelikli tamamlanır.</p>
       <div class="choices" id="areas">
         ${AREAS.map((a) => `<button type="button" class="choice" data-value="${a.id}" ${pressed(user.focusAreas.includes(a.id))}>${a.label}</button>`).join('')}
       </div>

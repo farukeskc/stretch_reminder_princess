@@ -94,10 +94,16 @@ async function main() {
     dryRun: args.dryRun,
     force: args.force,
     send: (sub, payload) => webpush.sendNotification(sub, payload, { TTL: 900, urgency: 'high', topic: 'stretch' }),
-    onSent: (u, { stretchId, recentStretchIds, now }) =>
+    onSent: (u, { session, recentStretchIds, now }) =>
       refs.get(u.id).update({
         lastSentAt: Timestamp.fromDate(now),
-        lastStretchId: stretchId,
+        lastSession: {
+          at: Timestamp.fromDate(now),
+          date: session.dateKey,
+          ids: session.ids,
+          load: session.load,
+          behind: session.behind,
+        },
         recentStretchIds,
         sentCount: FieldValue.increment(1),
       }),

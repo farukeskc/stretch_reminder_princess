@@ -1,6 +1,6 @@
 // Servis çalışanı: çevrimdışı önbellek + Web Push bildirimleri.
 // Uygulama dosyalarını değiştirdiğinde CACHE sürümünü artır.
-const CACHE = 'prenses-v1';
+const CACHE = 'prenses-v2';
 
 const SHELL = [
   '/',
@@ -21,12 +21,14 @@ const SHELL = [
   '/js/shared/defaults.js',
   '/js/shared/message.js',
   '/js/shared/pick.js',
+  '/js/shared/plan.js',
   '/js/shared/schedule.js',
   '/js/views/controls.js',
   '/js/views/home.js',
   '/js/views/install.js',
   '/js/views/library.js',
   '/js/views/onboarding.js',
+  '/js/views/session.js',
   '/js/views/settings.js',
   '/js/views/stretch.js',
   '/data/stretches.json',

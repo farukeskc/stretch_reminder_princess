@@ -1,6 +1,9 @@
 // Uygulama durumu: kullanıcı ayarları (Firestore + yerel yedek), hareket verisi.
 import { withDefaults } from './shared/defaults.js';
+import { localParts } from './shared/schedule.js';
+import { doneToday } from './shared/plan.js';
 import { initFirebase, loadUserDoc, saveUserDoc, getUid } from './firebase.js';
+import { recordStretch } from './stats.js';
 
 const LOCAL_KEY = 'pm.user.v1';
 
@@ -88,6 +91,20 @@ export async function updateUser(partial, opts = {}) {
       throw err;
     }
   }
+}
+
+/**
+ * Tamamlanan hareketleri bugünün programına işler (Firestore'a da yazılır; sunucu
+ * kalan seans yükünü buradan hesaplar). Yerel seri istatistiğini de günceller.
+ */
+export async function markDone(ids) {
+  if (!ids.length) return;
+  const tz = store.user.timezone;
+  const now = new Date();
+  const date = localParts(now, tz).dateKey;
+  const done = [...doneToday(store.user, now), ...ids].slice(-200);
+  for (const id of ids) recordStretch(id, tz);
+  await updateUser({ progress: { date, done }, lastStretchAt: 'now' });
 }
 
 /** Karşılama tamamlandığında tüm ayarları tek seferde yazar. */

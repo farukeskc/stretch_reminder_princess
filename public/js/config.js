@@ -7,15 +7,15 @@
 //    PRIVATE key'i ASLA buraya yazma; o yalnızca GitHub Secrets'ta durur.
 
 export const firebaseConfig = {
-  apiKey: 'BURAYA_API_KEY',
-  authDomain: 'PROJE_ID.firebaseapp.com',
-  projectId: 'PROJE_ID',
-  storageBucket: 'PROJE_ID.firebasestorage.app',
-  messagingSenderId: '000000000000',
-  appId: '1:000000000000:web:0000000000000000',
+  apiKey: "AIzaSyDqNRI-2noaIKrI9ouaA3_rPa7gwOxWUiU",
+  authDomain: "prenses-molasi.firebaseapp.com",
+  projectId: "prenses-molasi",
+  storageBucket: "prenses-molasi.firebasestorage.app",
+  messagingSenderId: "992753489835",
+  appId: "1:992753489835:web:ffbc028f4bc837307264ee"
 };
 
-export const VAPID_PUBLIC_KEY = 'BURAYA_VAPID_PUBLIC_KEY';
+export const VAPID_PUBLIC_KEY = 'BHr3ZXVuLjgkzPHv-kaB1KRjzpf6Cso2FXtw08KBFsQseisFCVw6eWdZNg53hya7wcHTUiASLkEjU5uIyHFr9Qo';
 
 export const FIREBASE_SDK_VERSION = '12.19.0';
 
