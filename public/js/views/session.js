@@ -50,7 +50,7 @@ export function sessionView(root, params, { navigate }) {
       <span class="chip pink" id="counter">1 / ${moves.length}</span>
     </div>
 
-    <section class="stage" id="stage"></section>
+    <section class="stack" id="media" style="gap:6px"></section>
 
     <header class="stack" style="gap:8px">
       <p class="tiny muted" id="next-label" hidden></p>
@@ -94,9 +94,13 @@ export function sessionView(root, params, { navigate }) {
     </section>
 
     <section class="stack" id="howto">
-      <div class="row between"><h2>Nasıl yapılır?</h2><a class="small" id="video" target="_blank" rel="noopener">Video ↗</a></div>
+      <h2>Nasıl yapılır?</h2>
       <ol class="steps" id="steps"></ol>
       <div id="extra" class="stack"></div>
+      <div class="stack" id="anim-wrap">
+        <h2>Animasyonlu gösterim</h2>
+        <section class="stage" id="stage"></section>
+      </div>
     </section>
   `;
 
@@ -116,9 +120,25 @@ export function sessionView(root, params, { navigate }) {
       .join('');
   }
 
+  const stageInner = (m) =>
+    `<span class="sparkle" style="top:14px;left:18px">✨</span><span class="sparkle" style="top:40px;right:22px;animation-delay:1s">💗</span>${renderFigure(m)}`;
+
   function showMove(i, { upcoming = false } = {}) {
     const m = moves[i];
-    $('stage').innerHTML = `<span class="sparkle" style="top:14px;left:18px">✨</span><span class="sparkle" style="top:40px;right:22px;animation-delay:1s">💗</span>${renderFigure(m)}`;
+    // Üstte hareketin YouTube videosu; videosu yoksa animasyon üstte kalır.
+    if (m.youtube?.id) {
+      $('media').innerHTML = `
+        <div class="video" id="video" data-yt="${esc(m.youtube.id)}" data-start="${Number(m.youtube.start) || 0}">
+          <img src="https://i.ytimg.com/vi/${esc(m.youtube.id)}/hqdefault.jpg" alt="" referrerpolicy="no-referrer">
+          <button type="button" aria-label="${esc(m.name)} videosunu oynat"><span></span></button>
+        </div>
+        <p class="tiny muted">${esc(m.youtube.channel)} · İngilizce anlatım</p>`;
+      $('stage').innerHTML = stageInner(m);
+      $('anim-wrap').hidden = false;
+    } else {
+      $('media').innerHTML = `<section class="stage">${stageInner(m)}</section>`;
+      $('anim-wrap').hidden = true;
+    }
     $('name').textContent = m.name;
     $('next-label').hidden = !upcoming;
     $('next-label').textContent = 'SIRADAKİ HAREKET';
@@ -128,11 +148,6 @@ export function sessionView(root, params, { navigate }) {
     $('extra').innerHTML =
       (m.tips?.length ? `<div class="card soft"><h3>💡 İpucu</h3><p class="small">${esc(m.tips[0])}</p></div>` : '') +
       (m.caution ? `<div class="notice">⚠️ ${esc(m.caution)}</div>` : '');
-    const v = $('video');
-    if (m.youtube?.id) {
-      v.hidden = false;
-      v.href = `https://www.youtube.com/watch?v=${encodeURIComponent(m.youtube.id)}`;
-    } else v.hidden = true;
   }
 
   function elapsedBefore(i) {
@@ -215,7 +230,8 @@ export function sessionView(root, params, { navigate }) {
     $('next-label').hidden = true;
     $('name').textContent = 'Seans tamam';
     $('chips').innerHTML = '';
-    $('stage').innerHTML = renderFigure(moves[moves.length - 1]);
+    // Seans bitti: üstteki videoyu (oynuyorsa durdurarak) kutlama görseliyle değiştir.
+    $('media').innerHTML = `<section class="stage">${stageInner(moves[moves.length - 1])}</section>`;
     $('praise').textContent = doneCount ? PRAISE[Math.floor(Math.random() * PRAISE.length)] : 'Bir dahaki sefere 💕';
     $('done-sub').textContent = `${moves.length} hareketin ${doneCount} tanesini yaptın.`;
     // Günlük program durumu (markDone yerel kopyayı hemen güncelledi)
@@ -265,6 +281,18 @@ export function sessionView(root, params, { navigate }) {
     $('live').hidden = false;
     playMove(0);
   });
+  // Üstteki videoya dokununca: sayfa içinde oynat, seans akıyorsa duraklat.
+  $('media').addEventListener('click', (e) => {
+    const box = e.target.closest('#video');
+    if (!box || !e.target.closest('button')) return;
+    box.innerHTML = `<iframe src="https://www.youtube-nocookie.com/embed/${encodeURIComponent(box.dataset.yt)}?autoplay=1&playsinline=1&rel=0&modestbranding=1&start=${Number(box.dataset.start) || 0}" title="Video" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe>`;
+    if (player?.running) {
+      player.pause();
+      $('toggle').textContent = 'Devam ▶️';
+      toast('Seans duraklatıldı. Video bitince "Devam"a dokun 💕', 2600);
+    }
+  });
+
   $('toggle').addEventListener('click', () => {
     if (!player) return;
     const running = player.toggle();
