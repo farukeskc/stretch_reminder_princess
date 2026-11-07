@@ -1,7 +1,7 @@
 // "Bugün" ekranı: selamlama, sıradaki hatırlatma, günlük program, sana özel seans, duraklatma.
 import { store, updateUser } from '../store.js';
 import { nextReminderAt, endOfLocalDay, toMs, localParts } from '../shared/schedule.js';
-import { composeSession, doneToday, sessionDuration } from '../shared/plan.js';
+import { composeSession, doneToday, sessionDuration, loadLimits } from '../shared/plan.js';
 import { formatDuration, approxDuration } from '../shared/message.js';
 import { AREA_LABELS } from '../shared/defaults.js';
 import { renderFigure } from '../figure.js';
@@ -49,22 +49,27 @@ function programBlock(u, s) {
   const workday = u.days.includes(localParts(now, u.timezone).dow);
   const pct = s.planTotal ? Math.round((s.doneCount / s.planTotal) * 100) : 0;
   let line;
-  if (s.complete) line = 'Bugünkü programı tamamladın 👑 Harikasın!';
-  else if (!workday) line = 'Bugün izin günün. İstersen yine de minik bir seans yapabilirsin 💕';
+  if (!workday) line = 'Bugün izin günün. İstersen yine de minik bir seans yapabilirsin 💕';
+  else if (s.noPlan) line = 'Bugün için program kalmadı. İlk tam programın bir sonraki iş gününde başlıyor; istersen şimdiden bir seans yapabilirsin 💕';
+  else if (s.complete) line = 'Bugünkü programı tamamladın 👑 Harikasın!';
   else if (s.sessionsLeft === 0) line = 'Bugünkü mesai bitti. Kalanlar yarına devretmez, dert etme 💕';
   else if (s.behind) line = `Biraz geride kaldık 💪 Kalan ${s.sessionsLeft} seans biraz daha uzun olacak.`;
-  else line = `Bugün ${s.sessionsLeft} seans kaldı, her biri yaklaşık ${Math.max(2, Math.ceil(s.remainingCount / s.sessionsLeft))} hareket.`;
+  else line = `Bugün ${s.sessionsLeft} seans kaldı, her biri yaklaşık ${Math.max(loadLimits(u).min, Math.ceil(s.remainingCount / s.sessionsLeft))} hareket.`;
   const focus = u.focusAreas.map((a) => AREA_LABELS[a]).filter(Boolean);
   return `
     <div class="row between">
       <div class="card-title" style="margin:0">Bugünkü program</div>
       <span class="tiny muted" style="font-weight:800">${st(u)}</span>
     </div>
-    <div class="row" style="align-items:baseline;gap:6px;margin-top:6px">
+    ${
+      s.noPlan
+        ? ''
+        : `<div class="row" style="align-items:baseline;gap:6px;margin-top:6px">
       <span class="next-time" style="font-size:2rem">${s.doneCount}</span>
       <span class="muted" style="font-weight:800">/ ${s.planTotal} hareket</span>
     </div>
-    <div class="progress"><i style="width:${pct}%"></i></div>
+    <div class="progress"><i style="width:${pct}%"></i></div>`
+    }
     <p class="small muted" style="margin-top:10px">${line}</p>
     ${focus.length ? `<div class="chips" style="margin-top:10px"><span class="chip plain">Odak</span>${focus.map((f) => `<span class="chip">${f}</span>`).join('')}</div>` : ''}`;
 }

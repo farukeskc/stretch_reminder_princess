@@ -4,7 +4,7 @@
 export const DEFAULT_SETTINGS = Object.freeze({
   nickname: 'Prensesim',
   timezone: 'Europe/Istanbul',
-  intervalMin: 60,
+  intervalMin: 120,
   startTime: '09:00',
   endTime: '18:00',
   days: [1, 2, 3, 4, 5], // ISO: 1 = Pazartesi … 7 = Pazar

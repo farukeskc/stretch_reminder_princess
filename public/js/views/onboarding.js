@@ -29,7 +29,7 @@ export function onboardingView(root, _params, { navigate }) {
       body = `
         <div class="ob-hero">${demo ? renderFigure(demo) : ''}</div>
         <h1>Hoş geldin 👑</h1>
-        <p class="muted">Gün içinde sana masa başında yapabileceğin 2-3 dakikalık minik esneme seansları hazırlayacağım. Hareketleri ben seçerim, sen sadece akışa uyarsın. Her hareketin animasyonu ve videosu var.</p>
+        <p class="muted">Gün içinde sana masa başında yapabileceğin birkaç dakikalık minik esneme seansları hazırlayacağım. Hareketleri ben seçerim, sen sadece akışa uyarsın. Her hareketin animasyonu ve videosu var.</p>
         <section class="card stack">${nicknameHtml(u)}</section>`;
     } else if (step === 1) {
       body = `

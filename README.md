@@ -93,9 +93,18 @@ Public repolarda 60 gün hiç aktivite olmazsa GitHub zamanlanmış iş akışla
 
 ### Günlük program ve seanslar ([`plan.js`](public/js/shared/plan.js))
 
-- **Günlük program:** Her gün için `seans sayısı × 3` hareketlik bir program hesaplanır. Örneğin hafta içi 09:00–18:00, saatte bir için 8 seans ve 24 hareket. Ağrıyan bölgelerin **her hareketi programa günde 2 kez** girer, kalan yer diğer bölgelerden çeşitli hareketlerle dolar. Program gün ve ayarlara göre sabittir; hem uygulama hem gönderici aynı programı hesaplar.
+- **Seans boyutu aralığa bağlı:** Saatte yaklaşık 3 hareket hedeflenir. Böylece aralık değişse de günlük toplam yaklaşık aynı kalır.
+
+  | Aralık | Seans | Telafide en fazla | Hafta içi 09–18 |
+  |---|---|---|---|
+  | **2 saat (varsayılan)** | **6 hareket (~5 dk)** | **9** | 4 seans, 24 hareket |
+  | 1,5 saat | 5 | 8 | 5 seans, 25 hareket |
+  | 1 saat | 3 | 6 | 8 seans, 24 hareket |
+  | 30–45 dk | 2 | 5 | 11–17 seans |
+
+- **Günlük program:** Her gün için `seans sayısı × seans boyutu` hareketlik bir program hesaplanır. Ağrıyan bölgelerin **her hareketi programa günde 2 kez** girer, kalan yer diğer bölgelerden çeşitli hareketlerle dolar. Program gün ve ayarlara göre sabittir; hem uygulama hem gönderici aynı programı hesaplar.
 - **Seans:** Her bildirim birkaç farklı hareketten oluşan bir seanstır. Hareketleri sistem seçer: önce ağrı hareketleri, mümkünse farklı bölgelerden, baştan aşağı sıralı (boyun → omuz → sırt → … → göz). Bildirime dokununca seans ekranı açılır; hareketler geri sayımla art arda akar ve her biten hareket anında programa işlenir.
-- **Telafi:** Her seansın yükü `kalan hareket ÷ kalan seans` hesabıyla belirlenir, en az 2, **en fazla 6** hareket. Seans atlanırsa yapılmayan hareketler kalan seanslara dağılır, yük kendiliğinden artar ve bildirimde "biraz geride kaldık" yazar. Program bitince kalan seanslar 2 hareketlik bonus olur.
+- **Telafi:** Her seansın yükü `kalan hareket ÷ kalan seans` hesabıyla belirlenir. Seans atlanırsa yapılmayan hareketler kalan seanslara dağılır, yük kendiliğinden artar (en fazla seans boyutu + 3) ve bildirimde "biraz geride kaldık" yazar. İki kez yapılması gereken bir hareketin kalan tekrarı kalan seans sayısına eşitlenirse o hareket seansa mutlaka konur; bu sayede kapasite yettiği sürece program gün içinde **her zaman** biter. Program bitince kalan seanslar küçük bonus seanslara dönüşür.
 - **Sıfırlama:** Program her gün sıfırlanır, yetişmeyen hareketler ertesi güne devretmez. Kurulum günü yalnızca kurulumdan sonraki seanslar planlanır, ilk gün "geride" başlanmaz.
 - **İlerleme takibi:** Yapılan hareketler Firestore'da `progress: {date, done[]}` olarak tutulur. Sunucu kalan yükü buradan hesaplar, gönderdiği seansı da `lastSession` olarak kaydeder.
 
@@ -112,7 +121,7 @@ Public repolarda 60 gün hiç aktivite olmazsa GitHub zamanlanmış iş akışla
 | Ne | Nerede |
 |---|---|
 | Varsayılan hitap, saatler, aralık | [`public/js/shared/defaults.js`](public/js/shared/defaults.js) (kullanıcı uygulamadan da değiştirebilir) |
-| Seans boyutu (3), ağrı tekrarı (2), telafi üst sınırı (6) | [`public/js/shared/plan.js`](public/js/shared/plan.js): `BASE_LOAD`, `FOCUS_REPS`, `MAX_LOAD` |
+| Saatlik hareket hedefi (3), ağrı tekrarı (2), telafi payı (+3) | [`public/js/shared/plan.js`](public/js/shared/plan.js): `MOVES_PER_HOUR`, `FOCUS_REPS`, `CATCHUP_EXTRA` |
 | Bildirim mesajları | [`public/data/messages.json`](public/data/messages.json): `session` (normal), `catchup` (telafi), `bonus` (program bitti); değişkenler `{nick}`, `{count}`, `{list}`, `{dur}` |
 | Hareketler, adımlar, videolar | [`public/data/stretches.json`](public/data/stretches.json) |
 | Animasyon pozları | [`public/js/figure.js`](public/js/figure.js), `ANIMS` |
@@ -121,7 +130,7 @@ Public repolarda 60 gün hiç aktivite olmazsa GitHub zamanlanmış iş akışla
 
 Hareket ya da mesaj ekledikten sonra `npm run check:data` ile doğrula.
 
-**Güncelleme yayınlarken:** [`public/sw.js`](public/sw.js) içindeki `CACHE` sürümünü artır (ör. `prenses-v2` → `prenses-v3`). Böylece telefondaki eski önbellek temizlenir.
+**Güncelleme yayınlarken:** [`public/sw.js`](public/sw.js) içindeki `CACHE` sürümünü artır (ör. `prenses-v3` → `prenses-v4`). Böylece telefondaki eski önbellek temizlenir.
 
 ## Video kontrol listesi
 

@@ -9,9 +9,7 @@ import {
   composeSession,
   doneToday,
   focusIds,
-  BASE_LOAD,
-  MAX_LOAD,
-  MIN_LOAD,
+  loadLimits,
   FOCUS_REPS,
   AREA_ORDER,
 } from '../../public/js/shared/plan.js';
@@ -32,6 +30,8 @@ const user = {
   days: [1, 2, 3, 4, 5],
   focusAreas: ['boyun', 'omuz'],
 };
+// Bu test kullanıcısı saatlik → seans boyutu 3, telafi 2–6
+const { base: BASE_LOAD, min: MIN_LOAD, max: MAX_LOAD } = loadLimits(user);
 const seeded = (seed = 1) => () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
 
 test('seans sayıları', () => {
@@ -77,6 +77,20 @@ test('kurulum günü: yalnızca kurulumdan sonraki seanslar planlanır, geride b
   // Firestore Timestamp biçimi de çalışır
   const ts = { ...user, createdAt: { seconds: ist('14:20').getTime() / 1000, nanoseconds: 0 } };
   assert.equal(dailyPlan(ts, stretches, DATE).length, 4 * BASE_LOAD);
+});
+
+test('izin günü ve mesai sonrası kurulum: program yok, normal boyutta seans önerilir', () => {
+  // Cumartesi: program yok
+  assert.equal(dailyPlan(user, stretches, '2026-11-07').length, 0);
+  const sat = composeSession(user, stretches, { now: ist('11:00', '07'), done: [], rng: seeded() });
+  assert.equal(sat.noPlan, true);
+  assert.equal(sat.complete, false, 'yeni/izinli kullanıcıya "programı bitirdin" denmemeli');
+  assert.equal(sat.ids.length, BASE_LOAD);
+  // Pazartesi 19:00'da kuruldu → bugün program yok, ertesi gün tam
+  const late = { ...user, createdAt: ist('19:00') };
+  assert.equal(dailyPlan(late, stretches, DATE).length, 0);
+  assert.equal(composeSession(late, stretches, { now: ist('19:05'), done: [] }).noPlan, true);
+  assert.equal(dailyPlan(late, stretches, '2026-11-10').length, 8 * BASE_LOAD);
 });
 
 test('remainingOf çoklu küme farkı', () => {
@@ -180,4 +194,84 @@ test('seans bildirimi: liste, süre, url, telafi ve bonus metni', () => {
   assert.equal(catchup.body.split(' ')[0], 'Biraz');
   const bonus = buildSessionNotification({}, { ...s, complete: true }, byId, templates, () => 0);
   assert.match(bonus.body, /bitirdin/);
+});
+
+// --- Aralığa bağlı seans boyutu ---
+test('seans boyutu aralığa göre: saatte ~3 hareket', () => {
+  const at = (m) => loadLimits({ ...user, intervalMin: m });
+  assert.deepEqual(at(120), { base: 6, min: 3, max: 9 });
+  assert.deepEqual(at(90), { base: 5, min: 2, max: 8 });
+  assert.deepEqual(at(60), { base: 3, min: 2, max: 6 });
+  assert.equal(at(45).base, 2);
+  assert.equal(at(30).base, 2);
+});
+
+test('yeni varsayılan (2 saat): 4 seans × 6 hareket, atlanırsa en fazla 9', () => {
+  const u2 = { ...user, intervalMin: 120 };
+  assert.equal(sessionsPerDay(u2), 4); // ~11:00, 13:00, 15:00, 17:00
+  assert.equal(dailyPlan(u2, stretches, DATE).length, 24);
+  const day = (skip) => {
+    const done = [];
+    const loads = [];
+    let lastIds = [];
+    const rng = seeded(11);
+    for (let i = 0; i < 4; i++) {
+      const t = new Date(ist('11:03').getTime() + i * 120 * 60_000);
+      const s = composeSession(u2, stretches, { now: t, done, lastIds, rng });
+      assert.equal(new Set(s.ids).size, s.ids.length, 'seansta tekrar yok');
+      loads.push(s.load);
+      if (!skip.includes(i)) done.push(...s.ids);
+      lastIds = s.ids;
+    }
+    return { loads, left: remainingOf(dailyPlan(u2, stretches, DATE), done).length };
+  };
+  assert.deepEqual(day([]), { loads: [6, 6, 6, 6], left: 0 });
+  const one = day([1]);
+  assert.deepEqual(one.loads, [6, 6, 9, 9], `${one.loads}`);
+  assert.equal(one.left, 0, 'bir seans atlansa da gün içinde tamamlanır');
+  assert.ok(day([0, 1]).loads.every((l) => l <= 9));
+});
+
+test('varsayılan ayarlarla oluşturulan kullanıcı 2 saat aralık alır', async () => {
+  const { DEFAULT_SETTINGS } = await import('../../public/js/shared/defaults.js');
+  assert.equal(DEFAULT_SETTINGS.intervalMin, 120);
+  assert.equal(loadLimits({}).base, 6);
+});
+
+// --- Özellik testi: rastgele 1000 gün ---
+test('özellik: sınırlar korunur, tekrar yok, kapasite yettikçe program hep biter', () => {
+  const AREAS = AREA_ORDER;
+  let s0 = 42;
+  const R = () => ((s0 = (s0 * 16807) % 2147483647) / 2147483647);
+  let expected = 0;
+  let completed = 0;
+  for (const interval of [30, 45, 60, 90, 120]) {
+    for (let trial = 0; trial < 200; trial++) {
+      const u = { ...user, intervalMin: interval, focusAreas: AREAS.filter(() => R() < 0.3) };
+      const n = sessionsPerDay(u);
+      const lim = loadLimits(u);
+      const skipP = [0, 0.15, 0.35, 0.6][trial % 4];
+      const done = [];
+      const needs = [];
+      const skips = [];
+      let lastIds = [];
+      for (let i = 0; i < n; i++) {
+        const t = new Date(ist('09:03').getTime() + (i + 1) * interval * 60_000);
+        const s = composeSession(u, stretches, { now: t, done, lastIds, rng: R });
+        assert.equal(new Set(s.ids).size, s.ids.length, 'seansta tekrar olmamalı');
+        assert.ok(s.ids.length >= lim.min && s.ids.length <= lim.max, `seans ${s.ids.length}, sınır ${lim.min}–${lim.max}`);
+        needs.push(Math.ceil(s.remainingCount / Math.max(1, s.sessionsLeft)));
+        if (R() < skipP) skips.push(i);
+        else done.push(...s.ids);
+        lastIds = s.ids;
+      }
+      const lastSkip = skips.length ? skips.at(-1) : -1;
+      if (lastSkip < n - 1 && needs.slice(lastSkip + 1).every((x) => x <= lim.max)) {
+        expected++;
+        if (remainingOf(dailyPlan(u, stretches, DATE), done).length === 0) completed++;
+      }
+    }
+  }
+  assert.ok(expected > 400);
+  assert.equal(completed, expected, `${completed}/${expected} gün tamamlandı`);
 });

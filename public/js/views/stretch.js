@@ -25,10 +25,20 @@ function videoHtml(s) {
   }
   return `
     <div class="video" id="video">
-      <img src="https://i.ytimg.com/vi/${esc(s.youtube.id)}/hqdefault.jpg" alt="" loading="lazy" referrerpolicy="no-referrer">
+      <img src="https://i.ytimg.com/vi/${esc(s.youtube.id)}/hqdefault.jpg" alt="" referrerpolicy="no-referrer">
       <button type="button" aria-label="Videoyu oynat"><span></span></button>
     </div>
     <p class="tiny muted">${esc(s.youtube.channel)} · İngilizce anlatım</p>`;
+}
+
+function stageHtml(s) {
+  return `
+    <section class="stage">
+      <span class="sparkle" style="top:14px;left:18px">✨</span>
+      <span class="sparkle" style="top:40px;right:22px;animation-delay:1s">💗</span>
+      <span class="sparkle" style="bottom:30px;left:26px;animation-delay:2s">🌸</span>
+      ${renderFigure(s)}
+    </section>`;
 }
 
 export function stretchView(root, params, { navigate }) {
@@ -42,17 +52,15 @@ export function stretchView(root, params, { navigate }) {
   let done = false;
   let sound = soundPref();
 
+  // Video varsa en üstte video, animasyon aşağıda; yoksa animasyon üstte kalır.
+  const hasVideo = !!s.youtube?.id;
+
   root.innerHTML = `
     <div class="topbar">
       <button class="back" id="back" aria-label="Geri">${BACK_ICON}</button>
     </div>
 
-    <section class="stage">
-      <span class="sparkle" style="top:14px;left:18px">✨</span>
-      <span class="sparkle" style="top:40px;right:22px;animation-delay:1s">💗</span>
-      <span class="sparkle" style="bottom:30px;left:26px;animation-delay:2s">🌸</span>
-      ${renderFigure(s)}
-    </section>
+    ${hasVideo ? `<section class="stack" style="gap:6px">${videoHtml(s)}</section>` : stageHtml(s)}
 
     <header class="stack" style="gap:8px">
       <h1>${esc(s.name)}</h1>
@@ -108,8 +116,7 @@ export function stretchView(root, params, { navigate }) {
     ${s.caution ? `<div class="notice">⚠️ ${esc(s.caution)}</div>` : ''}
 
     <section class="stack">
-      <h2>Videolu anlatım</h2>
-      ${videoHtml(s)}
+      ${hasVideo ? `<h2>Animasyonlu gösterim</h2>${stageHtml(s)}` : `<h2>Videolu anlatım</h2>${videoHtml(s)}`}
     </section>
 
     <button class="btn ghost block" id="mark">Kendi başıma yaptım, tamamlandı 💖</button>

@@ -1,21 +1,35 @@
 // Günlük program ve seans oluşturma. Saf fonksiyonlar: tarayıcı ve Node aynı dosyayı kullanır.
 //
 // Model:
-//  • Günlük hedef = (bugünkü seans sayısı) × BASE_LOAD hareket.
+//  • Seans boyutu hatırlatma aralığına bağlıdır: saatte ~MOVES_PER_HOUR hareket
+//    (2 saat → 6, 1,5 saat → 5, 1 saat → 3, 30–45 dk → 2). Böylece aralık değişse de
+//    günlük toplam yaklaşık aynı kalır.
+//  • Günlük hedef = (bugünkü seans sayısı) × seans boyutu.
 //  • Ağrıyan bölgelerin her hareketi programa FOCUS_REPS kez girer; kalan yer diğer
 //    bölgelerden çeşitli hareketlerle dolar. Program gün + ayarlara göre sabittir
 //    (aynı gün içinde sunucu ve uygulama aynı programı hesaplar).
-//  • Her seansın yükü = kalan hareket ÷ kalan seans (MIN_LOAD…MAX_LOAD arası).
+//  • Her seansın yükü = kalan hareket ÷ kalan seans (seans boyutu −3 … +3 arası).
 //    Seans atlanırsa yapılmayan hareketler kalan seanslara dağılır, yük artar.
 //  • Program her gün sıfırlanır.
 import { withDefaults } from './defaults.js';
 import { localParts, parseHM, toMs, TOLERANCE_MIN } from './schedule.js';
 import { pickStretch } from './pick.js';
 
-export const BASE_LOAD = 3;
-export const MIN_LOAD = 2;
-export const MAX_LOAD = 6;
+export const MOVES_PER_HOUR = 3;
 export const FOCUS_REPS = 2;
+const BASE_MIN = 2;
+const BASE_MAX = 6;
+const CATCHUP_EXTRA = 3; // telafide seans boyutunun en fazla bu kadar üstüne çıkılır
+
+/**
+ * Seans boyutu sınırları.
+ * @returns {{ base:number, min:number, max:number }}  base: normal seans, min/max: telafi aralığı
+ */
+export function loadLimits(rawUser) {
+  const u = withDefaults(rawUser);
+  const base = Math.min(BASE_MAX, Math.max(BASE_MIN, Math.round((u.intervalMin * MOVES_PER_HOUR) / 60)));
+  return { base, min: Math.max(BASE_MIN, base - CATCHUP_EXTRA), max: base + CATCHUP_EXTRA };
+}
 
 /** Seans içi sıralama: baştan aşağı. */
 export const AREA_ORDER = ['boyun', 'omuz', 'sirt', 'bel', 'bilek', 'kalca', 'bacak', 'goz'];
@@ -79,6 +93,8 @@ export function focusIds(rawUser, stretches) {
  */
 export function plannedSessions(rawUser, dateKey) {
   const u = withDefaults(rawUser);
+  const isoDow = ((new Date(`${dateKey}T12:00:00Z`).getUTCDay() + 6) % 7) + 1; // 1 = Pazartesi
+  if (!u.days.includes(isoDow)) return 0; // izin günü: program yok
   const created = toMs(u.createdAt);
   if (created) {
     const at = new Date(created);
@@ -90,7 +106,7 @@ export function plannedSessions(rawUser, dateKey) {
 /** Günün programı: hareket kimliklerinden oluşan çoklu küme (tekrarlar olabilir). */
 export function dailyPlan(rawUser, stretches, dateKey) {
   const u = withDefaults(rawUser);
-  const target = plannedSessions(u, dateKey) * BASE_LOAD;
+  const target = plannedSessions(u, dateKey) * loadLimits(u).base;
   const rng = seededRng(`${dateKey}|${[...u.focusAreas].sort().join(',')}`);
   const F = shuffle(focusIds(u, stretches), rng);
   const fset = new Set(F);
@@ -134,20 +150,26 @@ export function composeSession(rawUser, stretches, { now = new Date(), done, las
   const plan = dailyPlan(user, stretches, dateKey);
   const remaining = remainingOf(plan, doneList);
   const left = sessionsLeft(user, now);
-  const need = left > 0 ? Math.ceil(remaining.length / left) : BASE_LOAD;
-  const complete = remaining.length === 0;
-  const load = complete ? MIN_LOAD : Math.min(MAX_LOAD, Math.max(MIN_LOAD, need));
+  const lim = loadLimits(user);
+  const need = left > 0 ? Math.ceil(remaining.length / left) : lim.base;
+  const noPlan = plan.length === 0; // izin günü ya da kurulum günü mesai bitmiş
+  const complete = !noPlan && remaining.length === 0;
+  const load = noPlan ? lim.base : complete ? lim.min : Math.min(lim.max, Math.max(lim.min, need));
 
   const byId = new Map(stretches.map((s) => [s.id, s]));
   const fset = new Set(focusIds(user, stretches));
   const counts = new Map();
   for (const id of remaining) counts.set(id, (counts.get(id) || 0) + 1);
   const last = new Set(lastIds);
-  const score = new Map([...counts.keys()].map((id) => [id, counts.get(id) * 10 - (last.has(id) ? 5 : 0) + rng()]));
+  // Öncelik her zaman kalan tekrar sayısı (yoksa aynı hareketin 2 kopyası son seansa kalır ve
+  // bir seansa aynı hareket iki kez konamayacağı için program bitemez). Eşitlikte: önceki
+  // seansta olan geriye düşer (arka arkaya tekrar etmesin), sonra rastgele.
+  const score = new Map([...counts.keys()].map((id) => [id, counts.get(id) * 100 - (last.has(id) ? 25 : 0) + rng()]));
 
   const chosen = [];
   const usedAreas = new Set();
-  const take = (pool, n) => {
+  const take = (pool, want) => {
+    const n = Math.min(want, load - chosen.length); // seans kapasitesini asla aşma
     const ranked = pool.filter((id) => !chosen.includes(id)).sort((a, b) => score.get(b) - score.get(a));
     let added = 0;
     for (const strictArea of [true, false]) {
@@ -164,12 +186,25 @@ export function composeSession(rawUser, stretches, { now = new Date(), done, las
   };
 
   const ids = [...counts.keys()];
+
+  // 1) Zorunlu hareketler: kalan tekrar sayısı ≥ kalan seans sayısı olanlar bu seansa
+  //    girmek ZORUNDA (her seansta en fazla bir kez yapılabildikleri için). Bu kural,
+  //    kapasite yettiği sürece programın gün içinde bitmesini garanti eder.
+  if (left > 0) {
+    const must = ids.filter((id) => counts.get(id) >= left).sort((a, b) => score.get(b) - score.get(a));
+    for (const id of must) {
+      if (chosen.length >= load) break;
+      chosen.push(id);
+      usedAreas.add(byId.get(id)?.areas[0]);
+    }
+  }
+
+  // 2) Kalan yer: ağrı hareketlerine oranına göre (yukarı yuvarlanmış) kota, farklı bölgeler.
   const fPool = ids.filter((id) => fset.has(id));
   const oPool = ids.filter((id) => !fset.has(id));
   const fRem = remaining.filter((id) => fset.has(id)).length;
-  // Ağrı hareketlerine öncelik: oranına göre yukarı yuvarlanmış kota.
   const fQuota = remaining.length ? Math.min(fPool.length, Math.ceil((load * fRem) / remaining.length)) : 0;
-  take(fPool, fQuota);
+  take(fPool, fQuota - chosen.filter((id) => fset.has(id)).length);
   take(oPool, load - chosen.length);
   take(fPool, load - chosen.length);
 
@@ -185,8 +220,9 @@ export function composeSession(rawUser, stretches, { now = new Date(), done, las
   return {
     ids: chosen,
     load,
-    behind: !complete && left > 0 && need > BASE_LOAD,
+    behind: !complete && !noPlan && left > 0 && need > lim.base,
     complete,
+    noPlan,
     planTotal: plan.length,
     doneCount: plan.length - remaining.length,
     remainingCount: remaining.length,

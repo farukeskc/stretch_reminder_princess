@@ -3,7 +3,7 @@ import { store, updateUser } from '../store.js';
 import { enablePush, permission, hasSubscription, showTestNotification, syncSubscription } from '../push.js';
 import { pushSupported, isIOS, isStandalone } from '../install.js';
 import { isFirebaseConfigured, isVapidConfigured, APP_VERSION } from '../config.js';
-import { composeSession, sessionsPerDay, BASE_LOAD, FOCUS_REPS, MAX_LOAD } from '../shared/plan.js';
+import { composeSession, sessionsPerDay, loadLimits, FOCUS_REPS } from '../shared/plan.js';
 import { buildSessionNotification } from '../shared/message.js';
 import { toMs } from '../shared/schedule.js';
 import { nicknameHtml, scheduleHtml, areasHtml, bindControls } from './controls.js';
@@ -32,8 +32,8 @@ export function settingsView(root, _params, { rerender }) {
       <h2>Program</h2>
       ${scheduleHtml(u)}
       <div class="card soft small stack" style="gap:6px">
-        <p><b>Günlük program otomatik hazırlanır.</b> Bu ayarlarla günde <b id="sess-count">${sessionsPerDay(u)}</b> seans, toplam <b id="plan-count">${sessionsPerDay(u) * BASE_LOAD}</b> hareket.</p>
-        <p class="muted">Her seans normalde ${BASE_LOAD} hareket. Ağrıyan bölgelerinin hareketleri programa günde ${FOCUS_REPS} kez girer. Seans atlarsan kalan seanslar en fazla ${MAX_LOAD} harekete kadar uzar. Program her gün sıfırlanır.</p>
+        <p id="plan-info"></p>
+        <p class="muted">Seans boyutu aralığa göre ayarlanır (saatte ~3 hareket). Ağrıyan bölgelerinin hareketleri programa günde ${FOCUS_REPS} kez girer. Seans atlarsan kalan seanslar biraz uzar. Program her gün sıfırlanır.</p>
       </div>
     </section>
 
@@ -53,11 +53,17 @@ export function settingsView(root, _params, { rerender }) {
   // Otomatik kaydetme (gecikmeli toplu yazma)
   let pending = {};
   let timer;
+  const planInfo = (u2) => {
+    const n = sessionsPerDay(u2);
+    const { base, max } = loadLimits(u2);
+    root.querySelector('#plan-info').innerHTML =
+      `<b>Günlük program otomatik hazırlanır.</b> Bu ayarlarla günde <b>${n}</b> seans × <b>${base}</b> hareket = toplam <b>${n * base}</b> hareket. Telafide bir seans en fazla ${max} hareket olur.`;
+  };
+  planInfo(u);
+
   const save = (partial) => {
     Object.assign(pending, partial);
-    const preview = sessionsPerDay({ ...store.user, ...pending });
-    root.querySelector('#sess-count').textContent = preview;
-    root.querySelector('#plan-count').textContent = preview * BASE_LOAD;
+    planInfo({ ...store.user, ...pending });
     clearTimeout(timer);
     timer = setTimeout(async () => {
       const data = pending;
