@@ -1,8 +1,6 @@
 // Hatırlatma zamanlama mantığı. Saf fonksiyonlar: tarayıcı ve Node aynı dosyayı kullanır.
 import { withDefaults } from './defaults.js';
 
-/** Cron gecikmesinin birikmemesi için tanınan pay (dakika). */
-export const TOLERANCE_MIN = 5;
 
 const MIN = 60_000;
 const formatters = new Map();
@@ -65,11 +63,52 @@ export function localParts(date, timeZone) {
   };
 }
 
+// ---------------------------------------------------------------------------
+// Sabit seans saatleri
+// Seanslar mesai başlangıcından itibaren aralığın katlarındadır:
+//   09:00–18:00, 2 saat → 11:00, 13:00, 15:00, 17:00
+// Atlanan seans, kendi isteğiyle yapılan esneme ya da geç gelen bildirim bu saatleri
+// KAYDIRMAZ. Zamanlayıcı her birkaç dakikada çalışır ve saati gelmiş, henüz
+// gönderilmemiş seansı gönderir.
+// ---------------------------------------------------------------------------
+
+/** Bugünün seans saatleri, gece yarısından itibaren dakika: [660, 780, 900, 1020] */
+export function slotMinutes(rawUser) {
+  const u = withDefaults(rawUser);
+  const s = parseHM(u.startTime);
+  const e = parseHM(u.endTime);
+  const i = Number(u.intervalMin) || 60;
+  if (s == null || e == null || e <= s) return [];
+  const out = [];
+  for (let t = s + i; t < e; t += i) out.push(t);
+  return out;
+}
+
+/** "11:00" biçiminde seans saatleri. */
+export function slotLabels(rawUser) {
+  return slotMinutes(rawUser).map((m) => `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`);
+}
+
 /**
- * Şu an hatırlatma gönderilmeli mi?
- * @returns {{ due: boolean, reason: string, elapsedMin?: number }}
+ * Bir seans saatinden sonra en fazla kaç dakika içinde bildirim gönderilebilir.
+ * (Zamanlayıcı gecikse bile; daha geç kalınırsa o seans kaçırılmış sayılır.)
  */
-export function evaluate(rawUser, now = new Date(), { tolerance = TOLERANCE_MIN } = {}) {
+export function lateMaxMin(rawUser) {
+  const i = Number(withDefaults(rawUser).intervalMin) || 60;
+  return Math.min(i - 5, 45);
+}
+
+/** Verilen andaki yerel günün, verilen dakikasının gerçek anı (ms). */
+function instantOfLocalMinute(refMs, timeZone, minuteOfDay) {
+  const { minutes, seconds } = localParts(new Date(refMs), timeZone);
+  return refMs - ((minutes - minuteOfDay) * 60 + seconds) * 1000 - (refMs % 1000);
+}
+
+/**
+ * Şu an bildirim gönderilmeli mi? (O anki sabit seans saati gelmiş ve henüz gönderilmemişse.)
+ * @returns {{ due: boolean, reason: string, slotMs?: number, lateMin?: number }}
+ */
+export function evaluate(rawUser, now = new Date()) {
   const user = withDefaults(rawUser);
   const nowMs = toMs(now);
 
@@ -82,44 +121,45 @@ export function evaluate(rawUser, now = new Date(), { tolerance = TOLERANCE_MIN 
   const end = parseHM(user.endTime);
   if (start == null || end == null || end <= start) return { due: false, reason: 'bad-hours' };
 
-  const { dow, minutes, seconds } = localParts(new Date(nowMs), user.timezone);
+  const { dow, minutes } = localParts(new Date(nowMs), user.timezone);
   if (!user.days.includes(dow)) return { due: false, reason: 'day-off' };
   if (minutes < start || minutes >= end) return { due: false, reason: 'outside-hours' };
 
-  // Bugünkü mesai başlangıcının gerçek anı (saat dilimi ofsetinden bağımsız).
-  const windowStartMs = nowMs - ((minutes - start) * 60 + seconds) * 1000 - (nowMs % 1000);
-  const anchor = Math.max(windowStartMs, toMs(user.lastSentAt) ?? 0, toMs(user.lastStretchAt) ?? 0);
-  const elapsedMin = (nowMs - anchor) / MIN;
-  const interval = Number(user.intervalMin) || 60;
+  const slots = slotMinutes(user).filter((m) => m <= minutes);
+  if (!slots.length) return { due: false, reason: 'waiting' }; // ilk seans saatinden önce
+  const slotMs = instantOfLocalMinute(nowMs, user.timezone, slots.at(-1));
+  const lateMin = (nowMs - slotMs) / MIN;
 
-  if (elapsedMin >= interval - tolerance) return { due: true, reason: 'due', elapsedMin };
-  return { due: false, reason: 'waiting', elapsedMin };
+  if ((toMs(user.lastSentAt) ?? 0) >= slotMs) return { due: false, reason: 'sent', slotMs, lateMin };
+  if (pausedUntil && pausedUntil > slotMs) return { due: false, reason: 'paused-slot', slotMs, lateMin };
+  if (lateMin > lateMaxMin(user)) return { due: false, reason: 'missed', slotMs, lateMin };
+  return { due: true, reason: 'due', slotMs, lateMin };
 }
 
 /**
- * Bir sonraki hatırlatmanın yaklaşık zamanı (arayüzde göstermek için).
- * Cron 10 dakikada bir çalıştığı için gerçek bildirim birkaç dakika sapabilir.
+ * Sıradaki seansın sabit saati (arayüzde göstermek için). Saati gelmiş ama henüz
+ * gönderilmemiş bir seans varsa onun saati döner.
  * @returns {Date|null}
  */
 export function nextReminderAt(rawUser, now = new Date()) {
   const user = withDefaults(rawUser);
   if (!user.enabled) return null;
-  const startMs = Math.ceil(toMs(now) / MIN) * MIN;
-  const coarse = 5 * MIN;
-  const limit = startMs + 8 * 24 * 60 * MIN;
+  const nowMs = toMs(now);
+  const slots = slotMinutes(user);
+  if (!slots.length || !user.days.length) return null;
+  const paused = toMs(user.pausedUntil) ?? 0;
 
-  const isDue = (t) => evaluate(user, new Date(t), { tolerance: 0 }).due;
-  if (isDue(startMs)) return new Date(startMs);
+  const pending = evaluate(user, new Date(nowMs));
+  if (pending.due) return new Date(pending.slotMs);
 
-  for (let t = startMs + coarse; t <= limit; t += coarse) {
-    if (isDue(t)) {
-      // Dakika hassasiyetinde geri doğru ince ayar.
-      let exact = t;
-      for (let k = t - MIN; k > t - coarse; k -= MIN) {
-        if (isDue(k)) exact = k;
-        else break;
-      }
-      return new Date(exact);
+  for (let d = 0; d <= 8; d++) {
+    const ref = nowMs + d * 24 * 60 * MIN;
+    if (!user.days.includes(localParts(new Date(ref), user.timezone).dow)) continue;
+    for (const m of slots) {
+      const slotMs = instantOfLocalMinute(ref, user.timezone, m);
+      if (slotMs <= nowMs) continue;
+      if (paused > slotMs) continue; // sessiz modda kalan seanslar atlanır
+      return new Date(slotMs);
     }
   }
   return null;

@@ -1,6 +1,6 @@
 // Servis çalışanı: çevrimdışı önbellek + Web Push bildirimleri.
 // Uygulama dosyalarını değiştirdiğinde CACHE sürümünü artır.
-const CACHE = 'prenses-v3';
+const CACHE = 'prenses-v4';
 
 const SHELL = [
   '/',

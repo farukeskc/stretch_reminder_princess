@@ -56,16 +56,18 @@ export async function runReminders({
     }
 
     const verdict = force ? { due: true, reason: 'force' } : evaluate(user, now);
+    const slotText = verdict.slotMs
+      ? ` [seans ${new Intl.DateTimeFormat('tr-TR', { hour: '2-digit', minute: '2-digit', timeZone: user.timezone }).format(new Date(verdict.slotMs))}, +${Math.round(verdict.lateMin)} dk]`
+      : '';
     if (!verdict.due) {
-      const el = verdict.elapsedMin != null ? ` (${Math.round(verdict.elapsedMin)}/${user.intervalMin} dk)` : '';
-      log(`· ${tag} gönderilmedi: ${verdict.reason}${el}`);
+      log(`· ${tag} gönderilmedi: ${verdict.reason}${slotText}`);
       summary.skipped++;
       continue;
     }
 
     const session = composeSession(user, stretches, { now, lastIds: raw.lastSession?.ids || [], rng });
     const note = buildSessionNotification(user, session, byId, templates, rng);
-    const status = `program ${session.doneCount}/${session.planTotal}, kalan seans ${session.sessionsLeft}, yük ${session.load}${session.behind ? ' (telafi)' : ''}${session.complete ? ' (bonus)' : ''}`;
+    const status = `${slotText.trim()} program ${session.doneCount}/${session.planTotal}, kalan seans ${session.sessionsLeft}, yük ${session.load}${session.behind ? ' (telafi)' : ''}${session.complete ? ' (bonus)' : ''}`.trim();
 
     if (dryRun) {
       log(`✉️  [dry-run] ${tag} → ${status} → "${note.title}" / "${note.body}"`);

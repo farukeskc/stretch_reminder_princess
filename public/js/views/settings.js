@@ -43,7 +43,7 @@ export function settingsView(root, _params, { rerender }) {
 
     <section class="card soft stack small">
       <h3>Bilgi</h3>
-      <p class="muted">Bildirimler 10 dakikada bir çalışan bir zamanlayıcıyla gönderilir, bu yüzden birkaç dakika erken ya da geç gelebilir.</p>
+      <p class="muted">Seanslar sabit saatlerdedir; bildirim seans saatinden sonraki birkaç dakika içinde gelir (zamanlayıcı 5 dakikada bir çalışır).</p>
       <p class="muted">Bu uygulama tıbbi tavsiye yerine geçmez. Ağrın sürüyorsa bir doktora ya da fizyoterapiste danış.</p>
       ${store.uid ? `<div><p class="tiny muted">Kullanıcı kimliği (test bildirimi için):</p><div class="kbd-id" id="uid">${esc(store.uid)}</div></div>` : ''}
       <p class="tiny muted">Sürüm ${APP_VERSION} · Sevgiyle yapıldı 💕</p>
@@ -76,7 +76,7 @@ export function settingsView(root, _params, { rerender }) {
       }
     }, 600);
   };
-  bindControls(root, save);
+  bindControls(root, save, u);
 
   root.querySelector('#enabled').addEventListener('change', (e) => save({ enabled: e.target.checked }));
   root.querySelector('#unpause')?.addEventListener('click', async (e) => {

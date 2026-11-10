@@ -1,6 +1,6 @@
 // Karşılama ve Ayarlar ekranlarının paylaştığı form parçaları.
 import { AREAS, DAY_LABELS, INTERVAL_OPTIONS } from '../shared/defaults.js';
-import { parseHM } from '../shared/schedule.js';
+import { parseHM, slotLabels } from '../shared/schedule.js';
 import { esc, bindChoices } from '../ui.js';
 
 const pressed = (on) => `aria-pressed="${on ? 'true' : 'false'}"`;
@@ -36,7 +36,14 @@ export function scheduleHtml(user) {
           ${DAY_LABELS.map((d) => `<button type="button" class="choice day" data-value="${d.id}" ${pressed(user.days.includes(d.id))} aria-label="${d.long}">${d.short}</button>`).join('')}
         </div>
       </div>
+      <div class="notice ok" id="slots-preview" style="font-size:0.9rem">${slotsText(user)}</div>
     </div>`;
+}
+
+function slotsText(user) {
+  const labels = slotLabels(user);
+  if (!labels.length) return 'Bu saat aralığına hiç seans sığmıyor; aralığı kısalt ya da saatleri genişlet.';
+  return `🕐 Seans saatlerin: <b>${labels.join(' · ')}</b><br><span class="tiny">Bildirim bu saatlerden sonraki birkaç dakika içinde gelir. Seans atlasan da saatler değişmez.</span>`;
 }
 
 export function areasHtml(user) {
@@ -50,8 +57,20 @@ export function areasHtml(user) {
     </div>`;
 }
 
-/** Form olaylarını bağlar; her değişiklikte onChange(partial) çağrılır. */
-export function bindControls(root, onChange) {
+/**
+ * Form olaylarını bağlar; her değişiklikte onChange(partial) çağrılır.
+ * user verilirse seans saatleri önizlemesi anında güncellenir.
+ */
+export function bindControls(root, onChangeRaw, user = null) {
+  const state = user ? { ...user } : null;
+  const preview = root.querySelector('#slots-preview');
+  const onChange = (partial) => {
+    if (state && preview) {
+      Object.assign(state, partial);
+      preview.innerHTML = slotsText(state);
+    }
+    onChangeRaw(partial);
+  };
   const nick = root.querySelector('#nick');
   if (nick) {
     nick.addEventListener('input', () => {

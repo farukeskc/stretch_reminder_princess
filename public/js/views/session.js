@@ -50,7 +50,7 @@ export function sessionView(root, params, { navigate }) {
       <span class="chip pink" id="counter">1 / ${moves.length}</span>
     </div>
 
-    <section class="stack" id="media" style="gap:6px"></section>
+    <section class="stage" id="stage"></section>
 
     <header class="stack" style="gap:8px">
       <p class="tiny muted" id="next-label" hidden></p>
@@ -97,9 +97,9 @@ export function sessionView(root, params, { navigate }) {
       <h2>Nasıl yapılır?</h2>
       <ol class="steps" id="steps"></ol>
       <div id="extra" class="stack"></div>
-      <div class="stack" id="anim-wrap">
-        <h2>Animasyonlu gösterim</h2>
-        <section class="stage" id="stage"></section>
+      <div class="stack" id="video-wrap" style="gap:6px">
+        <h2>Videolu anlatım</h2>
+        <div class="stack" id="media" style="gap:6px"></div>
       </div>
     </section>
   `;
@@ -125,19 +125,19 @@ export function sessionView(root, params, { navigate }) {
 
   function showMove(i, { upcoming = false } = {}) {
     const m = moves[i];
-    // Üstte hareketin YouTube videosu; videosu yoksa animasyon üstte kalır.
+    // En üstte animasyon; hareketin YouTube videosu aşağıda "Videolu anlatım" bölümünde.
+    $('stage').innerHTML = stageInner(m);
     if (m.youtube?.id) {
       $('media').innerHTML = `
         <div class="video" id="video" data-yt="${esc(m.youtube.id)}" data-start="${Number(m.youtube.start) || 0}">
-          <img src="https://i.ytimg.com/vi/${esc(m.youtube.id)}/hqdefault.jpg" alt="" referrerpolicy="no-referrer">
+          <img src="https://i.ytimg.com/vi/${esc(m.youtube.id)}/hqdefault.jpg" alt="" loading="lazy" referrerpolicy="no-referrer">
           <button type="button" aria-label="${esc(m.name)} videosunu oynat"><span></span></button>
         </div>
         <p class="tiny muted">${esc(m.youtube.channel)} · İngilizce anlatım</p>`;
-      $('stage').innerHTML = stageInner(m);
-      $('anim-wrap').hidden = false;
+      $('video-wrap').hidden = false;
     } else {
-      $('media').innerHTML = `<section class="stage">${stageInner(m)}</section>`;
-      $('anim-wrap').hidden = true;
+      $('media').innerHTML = '';
+      $('video-wrap').hidden = true;
     }
     $('name').textContent = m.name;
     $('next-label').hidden = !upcoming;
@@ -230,8 +230,9 @@ export function sessionView(root, params, { navigate }) {
     $('next-label').hidden = true;
     $('name').textContent = 'Seans tamam';
     $('chips').innerHTML = '';
-    // Seans bitti: üstteki videoyu (oynuyorsa durdurarak) kutlama görseliyle değiştir.
-    $('media').innerHTML = `<section class="stage">${stageInner(moves[moves.length - 1])}</section>`;
+    // Seans bitti: oynayan video varsa durdur, üstte kutlama görseli.
+    $('media').innerHTML = '';
+    $('stage').innerHTML = stageInner(moves[moves.length - 1]);
     $('praise').textContent = doneCount ? PRAISE[Math.floor(Math.random() * PRAISE.length)] : 'Bir dahaki sefere 💕';
     $('done-sub').textContent = `${moves.length} hareketin ${doneCount} tanesini yaptın.`;
     // Günlük program durumu (markDone yerel kopyayı hemen güncelledi)
@@ -281,7 +282,7 @@ export function sessionView(root, params, { navigate }) {
     $('live').hidden = false;
     playMove(0);
   });
-  // Üstteki videoya dokununca: sayfa içinde oynat, seans akıyorsa duraklat.
+  // Videoya dokununca: sayfa içinde oynat, seans akıyorsa duraklat.
   $('media').addEventListener('click', (e) => {
     const box = e.target.closest('#video');
     if (!box || !e.target.closest('button')) return;

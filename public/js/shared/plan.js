@@ -12,7 +12,7 @@
 //    Seans atlanırsa yapılmayan hareketler kalan seanslara dağılır, yük artar.
 //  • Program her gün sıfırlanır.
 import { withDefaults } from './defaults.js';
-import { localParts, parseHM, toMs, TOLERANCE_MIN } from './schedule.js';
+import { localParts, parseHM, toMs, slotMinutes, lateMaxMin } from './schedule.js';
 import { pickStretch } from './pick.js';
 
 export const MOVES_PER_HOUR = 3;
@@ -61,25 +61,22 @@ function shuffle(arr, rng) {
   return a;
 }
 
-/** Bir iş gününde planlanan seans sayısı (ilk seans mesai başı + aralıkta). */
+/** Bir iş gününde planlanan seans sayısı = sabit seans saatlerinin sayısı. */
 export function sessionsPerDay(rawUser) {
-  const u = withDefaults(rawUser);
-  const s = parseHM(u.startTime);
-  const e = parseHM(u.endTime);
-  if (s == null || e == null || e <= s) return 1;
-  return Math.max(1, Math.ceil((e - s) / u.intervalMin) - 1);
+  return slotMinutes(rawUser).length;
 }
 
-/** Bu andan gün sonuna kadar (bu an dahil) kalan seans sayısı. Mesai dışında 0. */
+/**
+ * Bu andan gün sonuna kadar kalan seans sayısı (saati yeni geçmiş, hâlâ gönderilebilecek
+ * seans dahil). Mesai dışında / izin gününde 0.
+ */
 export function sessionsLeft(rawUser, now = new Date()) {
   const u = withDefaults(rawUser);
-  const s = parseHM(u.startTime);
   const e = parseHM(u.endTime);
-  if (s == null || e == null || e <= s) return 0;
   const { dow, minutes } = localParts(now, u.timezone);
-  if (!u.days.includes(dow) || minutes >= e) return 0;
-  if (minutes < s + u.intervalMin - TOLERANCE_MIN) return sessionsPerDay(u);
-  return Math.min(sessionsPerDay(u), Math.floor((e - minutes - 1) / u.intervalMin) + 1);
+  if (!u.days.includes(dow) || e == null || minutes >= e) return 0;
+  const grace = lateMaxMin(u);
+  return slotMinutes(u).filter((m) => m + grace >= minutes).length;
 }
 
 export function focusIds(rawUser, stretches) {

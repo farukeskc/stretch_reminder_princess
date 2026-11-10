@@ -82,7 +82,7 @@ test('dünkü ilerleme bugünü etkilemez', async () => {
 
 test('zamanı gelmeyen, aboneliği olmayan ve kapalı kullanıcıları atlar', async () => {
   const h = harness([
-    { id: 'early', data: { ...base, lastSentAt: new Date('2026-11-09T10:40:00+03:00'), pushSubscription: sub('b') } },
+    { id: 'early', data: { ...base, lastSentAt: new Date('2026-11-09T11:01:00+03:00'), pushSubscription: sub('b') } },
     { id: 'nosub', data: { ...base } },
     { id: 'paused', data: { ...base, pausedUntil: new Date('2026-11-09T12:00:00+03:00'), pushSubscription: sub('c') } },
   ]);

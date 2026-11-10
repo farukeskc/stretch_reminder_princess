@@ -2,9 +2,10 @@ name: Esneme hatırlatmaları
 
 on:
   schedule:
-    # Her 10 dakikada bir, Türkiye saatiyle 06:00–23:59 arası (UTC 03–20).
-    # Tam saat başlarında GitHub kuyruğu yoğun olduğu için :03, :13 … dakikaları seçildi.
-    - cron: '3,13,23,33,43,53 3-20 * * *'
+    # Her 5 dakikada bir, Türkiye saatiyle 06:00–23:59 arası (UTC 03–20).
+    # Seanslar sabit saatlerdedir (ör. 11:00, 13:00); saati gelen seans bir sonraki
+    # çalışmada gönderilir. Tam saat başında GitHub kuyruğu yoğun olduğu için :02, :07 … seçildi.
+    - cron: '2,7,12,17,22,27,32,37,42,47,52,57 3-20 * * *'
     # Ayda bir: zamanlayıcıyı canlı tut (aşağıdaki keepalive işi).
     - cron: '17 4 1 * *'
   workflow_dispatch:

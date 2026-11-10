@@ -4,12 +4,12 @@ Masa başında uzun süre oturanlar için esneme hatırlatıcısı. iPhone'a kur
 
 - **Uygulama:** Firebase Hosting'de, sade HTML/CSS/JS (build adımı yok).
 - **Veri:** Firestore (`users/{uid}`), anonim giriş.
-- **Bildirimler:** Standart Web Push (VAPID). Zamanlayıcı **GitHub Actions** üzerinde 10 dakikada bir çalışır. Firebase'in ücretsiz **Spark** planı yeterli, kredi kartı gerekmez.
+- **Bildirimler:** Standart Web Push (VAPID). Seanslar **sabit saatlerdedir** (ör. 11:00 · 13:00 · 15:00 · 17:00); zamanlayıcı **GitHub Actions** üzerinde 5 dakikada bir çalışır. Firebase'in ücretsiz **Spark** planı yeterli, kredi kartı gerekmez.
 
 ```
 iPhone (Ana Ekran uygulaması) ──abonelik──▶ Firestore users/{uid}
                                                ▲
-GitHub Actions (10 dk'da bir) ── okur/yazar ───┘
+GitHub Actions (5 dk'da bir) ── okur/yazar ────┘
         └── web-push ──▶ Apple push servisi ──▶ 🔔 bildirim ──dokun──▶ /#/seans/<hareketler>
 ```
 
@@ -61,14 +61,14 @@ Adres `https://<proje-id>.web.app` olur.
    | `VAPID_PRIVATE_KEY` | Adım 2'deki private key |
    | `VAPID_SUBJECT` | `mailto:senin@adresin.com` (Apple geçerli bir `mailto:` ya da `https:` ister) |
 
-4. Repo sayfasındaki **Actions** sekmesine gir ve solda **Esneme hatırlatmaları** ile **Testler** iş akışlarının listelendiğini kontrol et. Yeni repolarda bunlar otomatik açıktır, ek bir şey yapman gerekmez. `Esneme hatırlatmaları` artık 10 dakikada bir çalışacak.
+4. Repo sayfasındaki **Actions** sekmesine gir ve solda **Esneme hatırlatmaları** ile **Testler** iş akışlarının listelendiğini kontrol et. Yeni repolarda bunlar otomatik açıktır, ek bir şey yapman gerekmez. `Esneme hatırlatmaları` artık 5 dakikada bir çalışacak ve saati gelen seansı gönderecek.
    - Listede değil de yeşil **"I understand my workflows, go ahead and enable them"** butonu görürsen ona tıkla (genelde fork'lanmış repolarda çıkar).
    - Actions kapalı uyarısı görürsen: **Settings → Actions → General → Allow all actions and reusable workflows → Save**.
    - Zamanlanmış ilk çalışmayı beklemene gerek yok: **Esneme hatırlatmaları**'na tıklayıp sağdaki **Run workflow** butonuyla elle de tetikleyebilirsin.
 
-**Neden public repo?** GitHub Actions public repolarda ücretsiz ve sınırsızdır. Private repoda ayda 2000 dakika var. Bu zamanlayıcı ayda yaklaşık 3200 çalışma yapar, her biri en az 1 dakika sayılır. Repoda gizli bir şey yok: anahtarlar Secrets'ta, veriler kurallarla korunan Firestore'da duruyor.
+**Neden public repo?** GitHub Actions public repolarda ücretsiz ve sınırsızdır. Private repoda ayda 2000 dakika var. Bu zamanlayıcı ayda yaklaşık 6500 çalışma yapar, her biri en az 1 dakika sayılır. Repoda gizli bir şey yok: anahtarlar Secrets'ta, veriler kurallarla korunan Firestore'da duruyor.
 
-> Private repo kullanmak istersen [`reminders.yml`](.github/workflows/reminders.yml) içindeki cron'u seyrelt, ör. hafta içi 15 dakikada bir: `'5,20,35,50 5-16 * * 1-5'`. Bu ayda yaklaşık 1050 dakika eder.
+> Private repo kullanmak istersen [`reminders.yml`](.github/workflows/reminders.yml) içindeki cron'u yalnızca seans saatlerine indir, ör. 2 saatlik aralık ve hafta içi için: `'2,12 8,10,12,14 * * 1-5'` (UTC; Türkiye saatiyle 11, 13, 15, 17). Bu ayda yaklaşık 180 dakika eder.
 
 Public repolarda 60 gün hiç aktivite olmazsa GitHub zamanlanmış iş akışlarını durdurur. Bunu önlemek için aynı iş akışı ayda bir kendini yeniden etkinleştiriyor (`keepalive` işi). GitHub ayrıca durdurmadan önce e-posta gönderir. Gelirse Actions sekmesinden tek tıkla yeniden açabilirsin.
 
@@ -110,9 +110,9 @@ Public repolarda 60 gün hiç aktivite olmazsa GitHub zamanlanmış iş akışla
 
 ### Zamanlama ve diğerleri
 
-- **Zamanlama** ([`schedule.js`](public/js/shared/schedule.js)): Seçili gün ve saatler içinde, son bildirimden (ya da kendi isteğiyle yaptığı son esnemeden) bu yana **aralık − 5 dk** geçtiyse bildirim gönderilir. Cron 10 dakikada bir çalıştığı için bildirimler birkaç dakika sapabilir.
+- **Sabit seans saatleri** ([`schedule.js`](public/js/shared/schedule.js)): Seanslar mesai başlangıcından itibaren aralığın katlarındadır. 09:00–18:00 için: 2 saat → **11:00 · 13:00 · 15:00 · 17:00**; 1,5 saat → 10:30 · 12:00 · 13:30 · 15:00 · 16:30; 1 saat → 10:00 … 17:00. Zamanlayıcı 5 dakikada bir çalışır, saati gelmiş ve henüz gönderilmemiş seansı gönderir; bildirim seans saatinden sonraki birkaç dakika içinde gelir. **Atlanan seans, kendi isteğiyle yapılan esneme ya da sessiz mod saatleri kaydırmaz.** Zamanlayıcı 45 dakikadan fazla gecikirse (çok nadir) o seans kaçırılmış sayılır, gece yarısı bildirim gelmez. Seçilen aralığın saatleri Ayarlar'da ve karşılamada gösterilir.
 - **Mola modu:** "1 saat sessiz" ve "Bugünlük yeter" butonları `pausedUntil` alanını ayarlar. Sessizdeyken atlanan seanslar da telafiye girer.
-- Zamanlama, program ve seans mantığı **tek kaynaktan** gelir: aynı dosyaları hem uygulama (ör. "sıradaki seans 14:20 · 3 hareket") hem de gönderici script kullanır.
+- Zamanlama, program ve seans mantığı **tek kaynaktan** gelir: aynı dosyaları hem uygulama (ör. "sıradaki seans 15:00 · 6 hareket") hem de gönderici script kullanır.
 - Geçersiz abonelikler (uygulama silinmiş, izin kaldırılmış) gönderici tarafından otomatik temizlenir. Uygulama bir sonraki açılışta yeniden abone olur.
 - Actions loglarında her gönderim şöyle görünür: `gönderildi (201) → program 9/24, kalan seans 5, yük 4 (telafi) → …`
 

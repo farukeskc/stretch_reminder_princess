@@ -52,15 +52,13 @@ export function stretchView(root, params, { navigate }) {
   let done = false;
   let sound = soundPref();
 
-  // Video varsa en üstte video, animasyon aşağıda; yoksa animasyon üstte kalır.
-  const hasVideo = !!s.youtube?.id;
-
+  // En üstte animasyon; YouTube videosu sayfanın altında "Videolu anlatım" bölümünde.
   root.innerHTML = `
     <div class="topbar">
       <button class="back" id="back" aria-label="Geri">${BACK_ICON}</button>
     </div>
 
-    ${hasVideo ? `<section class="stack" style="gap:6px">${videoHtml(s)}</section>` : stageHtml(s)}
+    ${stageHtml(s)}
 
     <header class="stack" style="gap:8px">
       <h1>${esc(s.name)}</h1>
@@ -116,7 +114,8 @@ export function stretchView(root, params, { navigate }) {
     ${s.caution ? `<div class="notice">⚠️ ${esc(s.caution)}</div>` : ''}
 
     <section class="stack">
-      ${hasVideo ? `<h2>Animasyonlu gösterim</h2>${stageHtml(s)}` : `<h2>Videolu anlatım</h2>${videoHtml(s)}`}
+      <h2>Videolu anlatım</h2>
+      ${videoHtml(s)}
     </section>
 
     <button class="btn ghost block" id="mark">Kendi başıma yaptım, tamamlandı 💖</button>

@@ -7,6 +7,9 @@ import {
   parseHM,
   toMs,
   endOfLocalDay,
+  slotMinutes,
+  slotLabels,
+  lateMaxMin,
 } from '../../public/js/shared/schedule.js';
 import { pickStretch, pushRecent } from '../../public/js/shared/pick.js';
 import { formatDuration, fill } from '../../public/js/shared/message.js';
@@ -54,53 +57,83 @@ test('kapalıysa ya da duraklatıldıysa gönderilmez', () => {
   assert.equal(evaluate({ ...base, enabled: false }, ist('09T11:03')).reason, 'disabled');
   const paused = { ...base, pausedUntil: ist('09T12:00') };
   assert.equal(evaluate(paused, ist('09T11:03')).reason, 'paused');
+  // 12:00 seansı sessizliğin bittiği anda → gönderilir
   assert.equal(evaluate(paused, ist('09T12:03')).due, true);
+  // Sessizlik 11:30'a kadar sürdüyse 11:00 seansı sonradan gönderilmez
+  const p2 = { ...base, pausedUntil: ist('09T11:30') };
+  assert.equal(evaluate(p2, ist('09T11:32')).reason, 'paused-slot');
 });
 
-test('günün ilk hatırlatması mesai başlangıcından bir aralık sonra', () => {
-  const user = { ...base, lastSentAt: ist('06T17:03') }; // önceki iş günü
-  assert.equal(evaluate(user, ist('09T09:03')).due, false);
-  assert.equal(evaluate(user, ist('09T09:53')).due, false); // 53 dk < 55
-  assert.equal(evaluate(user, ist('09T09:56')).due, true); // tolerans içinde
-  assert.equal(evaluate(user, ist('09T10:03')).due, true);
+test('sabit seans saatleri: mesai başı + aralığın katları', () => {
+  assert.deepEqual(slotLabels(base), ['10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00']);
+  assert.deepEqual(slotLabels({ ...base, intervalMin: 120 }), ['11:00', '13:00', '15:00', '17:00']);
+  assert.deepEqual(slotLabels({ ...base, intervalMin: 90 }), ['10:30', '12:00', '13:30', '15:00', '16:30']);
+  assert.equal(slotLabels({ ...base, intervalMin: 45 })[0], '09:45');
+  assert.equal(slotMinutes({ ...base, intervalMin: 30 }).length, 17);
+  assert.deepEqual(slotLabels({ ...base, startTime: '09:30', endTime: '17:30', intervalMin: 120 }), ['11:30', '13:30', '15:30']);
 });
 
-test('son gönderimden sonra aralık beklenir, tolerans kaymayı önler', () => {
-  const user = { ...base, lastSentAt: ist('09T10:03') };
-  assert.equal(evaluate(user, ist('09T10:53')).due, false);
-  assert.equal(evaluate(user, ist('09T11:03')).due, true);
-  // Cron 2 dk erken çalışsa bile kaçırılmaz.
-  assert.equal(evaluate(user, ist('09T11:01')).due, true);
+test('seans saati gelince gönderilir, saat gelmeden gönderilmez', () => {
+  const u = { ...base, intervalMin: 120, lastSentAt: ist('06T17:02') }; // geçen cuma
+  assert.equal(evaluate(u, ist('09T09:30')).reason, 'waiting'); // ilk seanstan önce
+  assert.equal(evaluate(u, ist('09T10:57')).due, false); // 11:00'dan önce asla
+  const r = evaluate(u, ist('09T11:02'));
+  assert.equal(r.due, true);
+  assert.equal(r.slotMs, ist('09T11:00').getTime());
 });
 
-test('kendi kendine esnerse sayaç sıfırlanır', () => {
-  const user = { ...base, lastSentAt: ist('09T10:03'), lastStretchAt: ist('09T10:40') };
-  assert.equal(evaluate(user, ist('09T11:03')).due, false);
-  assert.equal(evaluate(user, ist('09T11:33')).due, false);
-  assert.equal(evaluate(user, ist('09T11:43')).due, true);
+test('aynı seans iki kez gönderilmez', () => {
+  const u = { ...base, intervalMin: 120, lastSentAt: ist('09T11:02') };
+  assert.equal(evaluate(u, ist('09T11:07')).reason, 'sent');
+  assert.equal(evaluate(u, ist('09T12:55')).reason, 'sent');
+  assert.equal(evaluate(u, ist('09T13:02')).due, true);
 });
 
-test('farklı aralıklar', () => {
-  const u30 = { ...base, intervalMin: 30, lastSentAt: ist('09T10:00') };
-  assert.equal(evaluate(u30, ist('09T10:23')).due, false);
-  assert.equal(evaluate(u30, ist('09T10:26')).due, true);
-  const u120 = { ...base, intervalMin: 120, lastSentAt: ist('09T10:00') };
-  assert.equal(evaluate(u120, ist('09T11:53')).due, false);
-  assert.equal(evaluate(u120, ist('09T11:56')).due, true);
+test('seans atlanınca saatler kaymaz ve sıradaki seans bir sonraki sabit saattir', () => {
+  // 11:00 bildirimi gitti, yapılmadı (atlandı). Saat 12:30.
+  const u = { ...base, intervalMin: 120, lastSentAt: ist('09T11:02') };
+  assert.equal(nextReminderAt(u, ist('09T12:30')).getTime(), ist('09T13:00').getTime());
+  // 13:00 de gönderildi ve atlandı; 14:59'da bile sıradaki 15:00 (1 dk sonrası değil, sabit saat)
+  const u2 = { ...base, intervalMin: 120, lastSentAt: ist('09T13:02') };
+  assert.equal(nextReminderAt(u2, ist('09T14:20')).getTime(), ist('09T15:00').getTime());
+  assert.equal(nextReminderAt(u2, ist('09T13:40')).getTime(), ist('09T15:00').getTime());
+});
+
+test('kendi isteğiyle esneme seans saatlerini kaydırmaz', () => {
+  const u = { ...base, intervalMin: 120, lastSentAt: ist('09T11:02'), lastStretchAt: ist('09T12:40') };
+  assert.equal(evaluate(u, ist('09T13:02')).due, true);
+  assert.equal(nextReminderAt(u, ist('09T12:45')).getTime(), ist('09T13:00').getTime());
+});
+
+test('zamanlayıcı çok gecikirse seans kaçırılmış sayılır (geç saatte bildirim yok)', () => {
+  const u = { ...base, intervalMin: 120, lastSentAt: ist('06T17:02') };
+  assert.equal(evaluate(u, ist('09T11:44')).due, true); // 44 dk gecikme: hâlâ gönder
+  assert.equal(evaluate(u, ist('09T11:50')).reason, 'missed'); // 45 dk'dan fazla
+  assert.equal(lateMaxMin({ intervalMin: 30 }), 25);
+  assert.equal(lateMaxMin({ intervalMin: 120 }), 45);
+});
+
+test('saati gelmiş ama henüz gönderilmemiş seans "sıradaki" olarak görünür', () => {
+  const u = { ...base, intervalMin: 120, lastSentAt: ist('06T17:02') };
+  assert.equal(nextReminderAt(u, ist('09T11:01')).getTime(), ist('09T11:00').getTime());
 });
 
 test('hatalı saat aralığı gönderim yapmaz', () => {
   assert.equal(evaluate({ ...base, startTime: '18:00', endTime: '09:00' }, ist('09T12:00')).reason, 'bad-hours');
+  assert.equal(nextReminderAt({ ...base, startTime: '18:00', endTime: '09:00' }, ist('09T12:00')), null);
 });
 
-test('nextReminderAt: mesai içinde, ertesi gün ve hafta sonu', () => {
-  const u = { ...base, lastSentAt: ist('09T10:03') };
-  assert.equal(nextReminderAt(u, ist('09T10:20')).getTime(), ist('09T11:03').getTime());
-  // Akşam → ertesi gün 10:00
+test('nextReminderAt: ertesi gün, hafta sonu, sessiz mod', () => {
+  const u = { ...base, lastSentAt: ist('09T17:02') };
   assert.equal(nextReminderAt(u, ist('09T19:00')).getTime(), ist('10T10:00').getTime());
   // Cuma akşamı → Pazartesi 10:00
-  const fri = { ...base, lastSentAt: ist('13T17:30') };
-  assert.equal(nextReminderAt(fri, ist('13T18:30')).getTime(), ist('16T10:00').getTime());
+  assert.equal(nextReminderAt({ ...base, lastSentAt: ist('13T17:02') }, ist('13T18:30')).getTime(), ist('16T10:00').getTime());
+  // "Bugünlük yeter" → yarının ilk seansı
+  const eod = { ...base, intervalMin: 120, lastSentAt: ist('09T11:02'), pausedUntil: endOfLocalDay(ist('09T12:00'), 'Europe/Istanbul') };
+  assert.equal(nextReminderAt(eod, ist('09T12:00')).getTime(), ist('10T11:00').getTime());
+  // 1 saat sessiz 12:30–13:30 → 13:00 atlanır, sıradaki 15:00
+  const hush = { ...base, intervalMin: 120, lastSentAt: ist('09T11:02'), pausedUntil: ist('09T13:30') };
+  assert.equal(nextReminderAt(hush, ist('09T12:30')).getTime(), ist('09T15:00').getTime());
   assert.equal(nextReminderAt({ ...base, enabled: false }, ist('09T10:20')), null);
   assert.equal(nextReminderAt({ ...base, days: [] }, ist('09T10:20')), null);
 });

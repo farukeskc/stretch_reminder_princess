@@ -63,7 +63,7 @@ export function onboardingView(root, _params, { navigate }) {
         <button class="btn ${step === STEPS - 1 ? 'ghost' : 'primary'}" id="next">${step === STEPS - 1 ? (permission() === 'granted' ? 'Başlayalım ✨' : 'Şimdilik geç') : 'Devam'}</button>
       </div>`;
 
-    bindControls(root, (partial) => updateUser(partial).catch(() => {}));
+    bindControls(root, (partial) => updateUser(partial).catch(() => {}), store.user);
 
     root.querySelector('#prev')?.addEventListener('click', () => {
       step -= 1;
